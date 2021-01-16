@@ -2,6 +2,7 @@
 <classpath>
   <classpathentry kind="src" path="src/test/java" output="target/test-classes" including="**/*.java"/>
   <classpathentry kind="src" path="src/main/java" including="**/*.java"/>
+  <classpathentry kind="src" path="src/main/resources" excluding="**/*.java"/>
   <classpathentry kind="output" path="target/classes"/>
   <classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/dynamodb/2.15.64/dynamodb-2.15.64.jar"/>
@@ -11,14 +12,14 @@
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/regions/2.15.64/regions-2.15.64.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/utils/2.15.64/utils-2.15.64.jar"/>
   <classpathentry kind="var" path="M2_REPO/org/reactivestreams/reactive-streams/1.0.2/reactive-streams-1.0.2.jar"/>
-  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.28/slf4j-api-1.7.28.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-api/1.7.30/slf4j-api-1.7.30.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/sdk-core/2.15.64/sdk-core-2.15.64.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/http-client-spi/2.15.64/http-client-spi-2.15.64.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/metrics-spi/2.15.64/metrics-spi-2.15.64.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/profiles/2.15.64/profiles-2.15.64.jar"/>
-  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-core/2.10.5/jackson-core-2.10.5.jar"/>
-  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-databind/2.10.5.1/jackson-databind-2.10.5.1.jar"/>
-  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-annotations/2.10.5/jackson-annotations-2.10.5.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-core/2.10.0/jackson-core-2.10.0.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-databind/2.10.0/jackson-databind-2.10.0.jar"/>
+  <classpathentry kind="var" path="M2_REPO/com/fasterxml/jackson/core/jackson-annotations/2.10.0/jackson-annotations-2.10.0.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/auth/2.15.64/auth-2.15.64.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/eventstream/eventstream/1.0.1/eventstream-1.0.1.jar"/>
   <classpathentry kind="var" path="M2_REPO/software/amazon/awssdk/protocol-core/2.15.64/protocol-core-2.15.64.jar"/>
@@ -40,5 +41,7 @@
   <classpathentry kind="var" path="M2_REPO/io/netty/netty-transport-native-unix-common/4.1.53.Final/netty-transport-native-unix-common-4.1.53.Final.jar"/>
   <classpathentry kind="var" path="M2_REPO/com/typesafe/netty/netty-reactive-streams-http/2.0.4/netty-reactive-streams-http-2.0.4.jar"/>
   <classpathentry kind="var" path="M2_REPO/com/typesafe/netty/netty-reactive-streams/2.0.4/netty-reactive-streams-2.0.4.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/slf4j/slf4j-simple/1.7.30/slf4j-simple-1.7.30.jar"/>
+  <classpathentry kind="var" path="M2_REPO/org/projectlombok/lombok/1.14.8/lombok-1.14.8.jar"/>
   <classpathentry kind="var" path="M2_REPO/junit/junit/3.8.1/junit-3.8.1.jar"/>
 </classpath>
