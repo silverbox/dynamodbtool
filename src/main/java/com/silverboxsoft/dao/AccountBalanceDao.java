@@ -48,9 +48,9 @@ public class AccountBalanceDao {
 
 	private AccountBalance convertFromMap(Map<String, AttributeValue> data) {
 		AccountBalance ret = new AccountBalance();
-		ret.setTgtDate(data.get("tgt_date").s().toString());
-		ret.setMethodCd(data.get("method_cd").s().toString());
-		ret.setValue(Long.parseLong(data.get("value").n().toString()));
+		ret.setTgtDate(data.get("tgt_date").s());
+		ret.setMethodCd(data.get("method_cd").s());
+		ret.setValue(Long.parseLong(data.get("value").n()));
 		return ret;
 	}
 }
