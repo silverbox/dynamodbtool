@@ -5,6 +5,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
 
+import org.apache.http.annotation.Obsolete;
+
 import com.silverboxsoft.model.AccountBalance;
 
 import software.amazon.awssdk.regions.Region;
@@ -13,6 +15,7 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
+@Obsolete
 public class AccountBalanceDao {
 
 	private static final String TABLE_NAME = "account_balance";
