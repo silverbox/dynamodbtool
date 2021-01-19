@@ -1,4 +1,4 @@
-package com.silverboxsoft.classes;
+package com.silverboxsoft.dynamodbtool.classes;
 
 public enum DynamoDbConditionType {
 	EQUAL(" = "), GREATER_THAN(" > "), LESSER_THAN(" < "), GREATER_THAN_EQ(" >= "), LESSER_THAN_EQ(" <= ");

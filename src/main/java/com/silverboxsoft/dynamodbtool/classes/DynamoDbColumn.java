@@ -1,4 +1,4 @@
-package com.silverboxsoft.classes;
+package com.silverboxsoft.dynamodbtool.classes;
 
 import lombok.Data;
 

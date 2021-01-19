@@ -23,7 +23,7 @@ public class App extends Application {
 	private void prepareControl(Stage stage) throws IOException {
 
 		FXMLLoader fxmlLoader = new FXMLLoader(
-				getClass().getResource("controller/javafx/DynamoDbToolController.fxml"));
+				getClass().getResource("dynamodbtool/controller/javafx/DynamoDbToolController.fxml"));
 		VBox newPane = (VBox) fxmlLoader.load();
 
 		Scene scene = new Scene(newPane);
