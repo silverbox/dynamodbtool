@@ -1,11 +1,12 @@
 package com.silverboxsoft.dynamodbtool.dao;
 
+import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.List;
 
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.fxmodel.TableNameCondType;
 
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.ListTablesRequest;
 import software.amazon.awssdk.services.dynamodb.model.ListTablesResponse;
@@ -17,17 +18,18 @@ import software.amazon.awssdk.utils.StringUtils;
  * @author tanakaeiji
  *
  */
-public class TableListDao {
+public class TableListDao extends AbsDao {
 
-	private static Region region = Region.AP_NORTHEAST_1;
+	public TableListDao(DynamoDbConnectInfo connInfo) {
+		super(connInfo);
+	}
 
-	public List<String> getTableList(String condition, TableNameCondType conditionType) {
-		DynamoDbClient ddb = DynamoDbClient.builder().region(region).build();
+	public List<String> getTableList(String condition, TableNameCondType conditionType) throws URISyntaxException {
+		DynamoDbClient ddb = getDbClient();
 		try {
 			return getAllTableNameLsit(ddb, condition, conditionType);
 		} finally {
 			ddb.close();
-
 		}
 	}
 

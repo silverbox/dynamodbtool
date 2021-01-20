@@ -1,25 +1,28 @@
 package com.silverboxsoft.dynamodbtool.dao;
 
+import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.List;
 
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbCondition;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionJoinType;
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult;
 
-import software.amazon.awssdk.regions.Region;
 import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
-public class QueryDao {
+public class QueryDao extends AbsDao {
 
-	private static Region region = Region.AP_NORTHEAST_1;
+	public QueryDao(DynamoDbConnectInfo connInfo) {
+		super(connInfo);
+	}
 
 	public DynamoDbResult getResult(String tableName, DynamoDbConditionJoinType conditionJoinType,
-			List<DynamoDbCondition> conditionList) {
-		DynamoDbClient ddb = DynamoDbClient.builder().region(region).build();
+			List<DynamoDbCondition> conditionList) throws URISyntaxException {
+		DynamoDbClient ddb = getDbClient();
 		try {
 			HashMap<String, String> attrNameAlias = new HashMap<String, String>();
 			HashMap<String, AttributeValue> attrValues = new HashMap<String, AttributeValue>();
