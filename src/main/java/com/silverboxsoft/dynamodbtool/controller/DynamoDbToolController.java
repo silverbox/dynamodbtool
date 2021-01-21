@@ -13,6 +13,7 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult;
 import com.silverboxsoft.dynamodbtool.dao.QueryDao;
+import com.silverboxsoft.dynamodbtool.dao.ScanDao;
 import com.silverboxsoft.dynamodbtool.dao.TableInfoDao;
 import com.silverboxsoft.dynamodbtool.dao.TableListDao;
 import com.silverboxsoft.dynamodbtool.fxmodel.TableNameCondType;
@@ -30,10 +31,10 @@ import javafx.scene.control.TableColumn;
 import javafx.scene.control.TableView;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
-import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
+import software.amazon.awssdk.utils.StringUtils;
 
 public class DynamoDbToolController implements Initializable {
 
@@ -90,15 +91,22 @@ public class DynamoDbToolController implements Initializable {
 	@FXML
 	protected void actLoad(ActionEvent ev) throws URISyntaxException {
 		String tableName = txtFldTableName.getText();
-		QueryDao dao = new QueryDao(getConnectInfo());
-		List<DynamoDbCondition> conditionList = new ArrayList<>();
-		DynamoDbCondition cond = new DynamoDbCondition();
-		cond.setColumnName(txtFldColumnName.getText());
-		cond.setConditionType(DynamoDbConditionType.EQUAL);
-		cond.setValue(txtFldCondValue.getText());
-		conditionList.add(cond);
-
-		DynamoDbResult result = dao.getResult(tableName, DynamoDbConditionJoinType.AND, conditionList);
+		String condColumn = txtFldColumnName.getText();
+		String condValue = txtFldCondValue.getText();
+		DynamoDbResult result = null;
+		if (!StringUtils.isEmpty(condColumn) && !StringUtils.isEmpty(condValue)) {
+			QueryDao dao = new QueryDao(getConnectInfo());
+			List<DynamoDbCondition> conditionList = new ArrayList<>();
+			DynamoDbCondition cond = new DynamoDbCondition();
+			cond.setColumnName(condColumn);
+			cond.setConditionType(DynamoDbConditionType.EQUAL);
+			cond.setValue(condValue);
+			conditionList.add(cond);
+			result = dao.getResult(tableName, DynamoDbConditionJoinType.AND, conditionList);
+		} else {
+			ScanDao dao = new ScanDao(getConnectInfo());
+			result = dao.getResult(tableName);
+		}
 		setTable(result);
 	}
 
@@ -124,7 +132,7 @@ public class DynamoDbToolController implements Initializable {
 		TableDescription tableInfo = tableNameDao.getTableDescription(tableName);
 		lblRecordCount.setText(String.valueOf(tableInfo.itemCount().longValue()));
 		lblTableSize.setText(String.valueOf(tableInfo.tableSizeBytes().longValue()));
-		List<AttributeDefinition> attributes = tableInfo.attributeDefinitions();
+		// List<AttributeDefinition> attributes = tableInfo.attributeDefinitions();
 		// System.out.println("Attributes");
 		// for (AttributeDefinition a : attributes) {
 		// System.out.format(" %s (%s)\n", a.attributeName(), a.attributeType());
@@ -168,10 +176,8 @@ public class DynamoDbToolController implements Initializable {
 		DynamoDbConnectInfo connInfo = new DynamoDbConnectInfo();
 		if (rbConnectAWS.isSelected()) {
 			connInfo.setConnectType(DynamoDbConnectType.AWS);
-			System.out.println("aws");
 		} else {
 			connInfo.setConnectType(DynamoDbConnectType.LOCAL);
-			System.out.println("local");
 		}
 		connInfo.setEndpointUrl(txtFldLocalEndpoint.getText());
 

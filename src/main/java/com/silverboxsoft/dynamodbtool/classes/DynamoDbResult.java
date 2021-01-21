@@ -9,6 +9,7 @@ import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.ScanResponse;
 
 public class DynamoDbResult {
 
@@ -17,7 +18,15 @@ public class DynamoDbResult {
 	private List<ObservableList<String>> resItems = new ArrayList<>();
 
 	public DynamoDbResult(QueryResponse response) {
-		for (Map<String, AttributeValue> resItem : response.items()) {
+		initilize(response.items());
+	}
+
+	public DynamoDbResult(ScanResponse response) {
+		initilize(response.items());
+	}
+
+	private void initilize(List<Map<String, AttributeValue>> items) {
+		for (Map<String, AttributeValue> resItem : items) {
 			analyzeOneItem(resItem);
 
 			ObservableList<String> record = FXCollections.observableArrayList();

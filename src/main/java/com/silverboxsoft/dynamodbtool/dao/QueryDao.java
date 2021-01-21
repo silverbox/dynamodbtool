@@ -14,6 +14,9 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
 
+/*
+ * https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/javav2/example_code/dynamodb/src/main/java/com/example/dynamodb/Query.java
+ */
 public class QueryDao extends AbsDao {
 
 	public QueryDao(DynamoDbConnectInfo connInfo) {
@@ -37,7 +40,6 @@ public class QueryDao extends AbsDao {
 				}
 				conditionExpression.append(dbCond.getConditionExpression());
 			}
-
 			System.out.println(conditionExpression.toString());
 			QueryRequest queryReq = QueryRequest.builder()
 					.tableName(tableName)

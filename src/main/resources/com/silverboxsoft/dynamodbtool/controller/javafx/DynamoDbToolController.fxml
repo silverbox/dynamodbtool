@@ -96,7 +96,7 @@
                                     <Button id="btnTest" layoutX="525.0" layoutY="15.0" mnemonicParsing="false" onAction="#actLoad" text="Button" />
                                     <TextField fx:id="txtFldTableName" layoutX="14.0" layoutY="15.0" prefHeight="25.0" prefWidth="166.0" promptText="table nanme" text="account_balance" />
                                     <TextField fx:id="txtFldColumnName" layoutX="189.0" layoutY="15.0" promptText="condition column" text="tgt_date" />
-                                    <TextField fx:id="txtFldCondValue" layoutX="345.0" layoutY="15.0" promptText="condition value" text="20200209" />
+                                    <TextField fx:id="txtFldCondValue" layoutX="348.0" layoutY="15.0" promptText="condition value" />
                                     <Label layoutX="14.0" layoutY="45.0" text="RecordCount =" />
                                     <Label layoutX="14.0" layoutY="69.0" text="TableSize =" />
                                     <Label fx:id="lblRecordCount" layoutX="104.0" layoutY="45.0" text="0" />
