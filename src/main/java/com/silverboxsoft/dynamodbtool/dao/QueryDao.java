@@ -13,6 +13,7 @@ import software.amazon.awssdk.services.dynamodb.DynamoDbClient;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.QueryRequest;
 import software.amazon.awssdk.services.dynamodb.model.QueryResponse;
+import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 /*
  * https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/javav2/example_code/dynamodb/src/main/java/com/example/dynamodb/Query.java
@@ -23,8 +24,9 @@ public class QueryDao extends AbsDao {
 		super(connInfo);
 	}
 
-	public DynamoDbResult getResult(String tableName, DynamoDbConditionJoinType conditionJoinType,
+	public DynamoDbResult getResult(TableDescription tableInfo, DynamoDbConditionJoinType conditionJoinType,
 			List<DynamoDbCondition> conditionList) throws URISyntaxException {
+		String tableName = tableInfo.tableName();
 		DynamoDbClient ddb = getDbClient();
 		try {
 			HashMap<String, String> attrNameAlias = new HashMap<String, String>();
@@ -40,7 +42,6 @@ public class QueryDao extends AbsDao {
 				}
 				conditionExpression.append(dbCond.getConditionExpression());
 			}
-			System.out.println(conditionExpression.toString());
 			QueryRequest queryReq = QueryRequest.builder()
 					.tableName(tableName)
 					.keyConditionExpression(conditionExpression.toString())
@@ -49,7 +50,7 @@ public class QueryDao extends AbsDao {
 					.build();
 
 			QueryResponse response = ddb.query(queryReq);
-			return new DynamoDbResult(response);
+			return new DynamoDbResult(response, tableInfo);
 		} finally {
 			ddb.close();
 		}

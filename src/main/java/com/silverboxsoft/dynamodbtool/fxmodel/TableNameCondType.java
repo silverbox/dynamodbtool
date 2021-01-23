@@ -4,7 +4,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 public enum TableNameCondType {
-	PARTIAL_MATCH("部分一致"), HEAD_MATCH("前方一致"), TAIL_MATCH("後方一致");
+	PARTIAL_MATCH("Partial match"), HEAD_MATCH("Head match"), TAIL_MATCH("Tail match");
 
 	final private String name;
 

@@ -57,9 +57,6 @@ public class DynamoDbToolController implements Initializable {
 	 * Data Condition
 	 */
 	@FXML
-	TextField txtFldTableName;
-
-	@FXML
 	TextField txtFldColumnName;
 
 	@FXML
@@ -78,10 +75,25 @@ public class DynamoDbToolController implements Initializable {
 	ListView<String> lvTableList;
 
 	@FXML
+	Label lblTableName;
+
+	@FXML
 	Label lblRecordCount;
 
 	@FXML
 	Label lblTableSize;
+
+	@FXML
+	Label lblPartitionKey;
+
+	@FXML
+	Label lblSortKey;
+
+	/*
+	 * 
+	 */
+
+	private TableDescription currentTableInfo = null;
 
 	@Override
 	public void initialize(URL location, ResourceBundle resources) {
@@ -90,7 +102,6 @@ public class DynamoDbToolController implements Initializable {
 
 	@FXML
 	protected void actLoad(ActionEvent ev) throws URISyntaxException {
-		String tableName = txtFldTableName.getText();
 		String condColumn = txtFldColumnName.getText();
 		String condValue = txtFldCondValue.getText();
 		DynamoDbResult result = null;
@@ -102,10 +113,10 @@ public class DynamoDbToolController implements Initializable {
 			cond.setConditionType(DynamoDbConditionType.EQUAL);
 			cond.setValue(condValue);
 			conditionList.add(cond);
-			result = dao.getResult(tableName, DynamoDbConditionJoinType.AND, conditionList);
+			result = dao.getResult(currentTableInfo, DynamoDbConditionJoinType.AND, conditionList);
 		} else {
 			ScanDao dao = new ScanDao(getConnectInfo());
-			result = dao.getResult(tableName);
+			result = dao.getResult(currentTableInfo);
 		}
 		setTable(result);
 	}
@@ -127,31 +138,34 @@ public class DynamoDbToolController implements Initializable {
 
 	protected void actTableDecided() throws URISyntaxException {
 		String tableName = lvTableList.getSelectionModel().getSelectedItem();
-		txtFldTableName.setText(tableName);
+		setCurrentTabeInfo(tableName);
+	}
+
+	private void setCurrentTabeInfo(String tableName) throws URISyntaxException {
+		lblTableName.setText(tableName);
 		TableInfoDao tableNameDao = new TableInfoDao(getConnectInfo());
 		TableDescription tableInfo = tableNameDao.getTableDescription(tableName);
 		lblRecordCount.setText(String.valueOf(tableInfo.itemCount().longValue()));
 		lblTableSize.setText(String.valueOf(tableInfo.tableSizeBytes().longValue()));
-		// List<AttributeDefinition> attributes = tableInfo.attributeDefinitions();
-		// System.out.println("Attributes");
-		// for (AttributeDefinition a : attributes) {
-		// System.out.format(" %s (%s)\n", a.attributeName(), a.attributeType());
-		// }
+		currentTableInfo = tableInfo;
+		setCurrentTableInfoToComponent();
+	}
 
-		System.out.println("keyInfos");
-		List<KeySchemaElement> keyInfos = tableInfo.keySchema();
+	private void setCurrentTableInfoToComponent() {
+		txtFldColumnName.setText("");
+		lblPartitionKey.setText("-");
+		lblSortKey.setText("-");
+
+		List<KeySchemaElement> keyInfos = currentTableInfo.keySchema();
 		for (KeySchemaElement k : keyInfos) {
 			if (k.keyType() == KeyType.HASH) {
 				txtFldColumnName.setText(k.attributeName());
+				lblPartitionKey.setText(k.attributeName());
+			} else if (k.keyType() == KeyType.RANGE) {
+				lblSortKey.setText(k.attributeName());
 			}
-			System.out.format("  %s (%s)\n", k.attributeName(), k.keyType().toString());
 		}
 	}
-
-	// @FXML
-	// protected void onTxtFldTableNameCondKeyPress(KeyEvent e) {
-	// System.out.println("onTxtFldTableNameCondKeyPress");
-	// }
 
 	private void initCmb() {
 		cmbTableNameCond.getItems().addAll(TableNameCondType.getTitleList());
@@ -163,13 +177,17 @@ public class DynamoDbToolController implements Initializable {
 		tableResultList.getColumns().clear();
 		for (int colIdx = 0; colIdx < result.getColumnCount(); colIdx++) {
 			String columnName = result.getDynamoDbColumn(colIdx).getColumnName();
-			TableColumn<ObservableList<String>, String> dataCol = new TableColumn<>(columnName);
-			final int finalColIdx = colIdx;
-			dataCol.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(finalColIdx)));
+			TableColumn<ObservableList<String>, String> dataCol = getTableColumn(columnName, colIdx);
 			tableResultList.getColumns().add(dataCol);
 		}
 
 		tableResultList.getItems().addAll(result.getResultItems());
+	}
+
+	private TableColumn<ObservableList<String>, String> getTableColumn(String columnName, final int finalColIdx) {
+		TableColumn<ObservableList<String>, String> dataCol = new TableColumn<>(columnName);
+		dataCol.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(finalColIdx)));
+		return dataCol;
 	}
 
 	private DynamoDbConnectInfo getConnectInfo() {
