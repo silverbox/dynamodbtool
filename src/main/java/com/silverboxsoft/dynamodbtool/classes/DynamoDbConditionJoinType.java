@@ -1,4 +1,4 @@
-package com.silverboxsoft.classes;
+package com.silverboxsoft.dynamodbtool.classes;
 
 public enum DynamoDbConditionJoinType {
 	AND(" and "), OR(" or ");

@@ -1,0 +1,132 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+
+<VBox prefHeight="576.0" prefWidth="867.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.silverboxsoft.dynamodbtool.controller.DynamoDbToolController">
+  <children>
+    <MenuBar VBox.vgrow="NEVER">
+      <menus>
+        <Menu mnemonicParsing="false" text="File">
+          <items>
+            <MenuItem mnemonicParsing="false" text="New" />
+            <MenuItem mnemonicParsing="false" text="Open…" />
+            <Menu mnemonicParsing="false" text="Open Recent" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Close" />
+            <MenuItem mnemonicParsing="false" text="Save" />
+            <MenuItem mnemonicParsing="false" text="Save As…" />
+            <MenuItem mnemonicParsing="false" text="Revert" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Preferences…" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Quit" />
+          </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="Edit">
+          <items>
+            <MenuItem mnemonicParsing="false" text="Undo" />
+            <MenuItem mnemonicParsing="false" text="Redo" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Cut" />
+            <MenuItem mnemonicParsing="false" text="Copy" />
+            <MenuItem mnemonicParsing="false" text="Paste" />
+            <MenuItem mnemonicParsing="false" text="Delete" />
+            <SeparatorMenuItem mnemonicParsing="false" />
+            <MenuItem mnemonicParsing="false" text="Select All" />
+            <MenuItem mnemonicParsing="false" text="Unselect All" />
+          </items>
+        </Menu>
+        <Menu mnemonicParsing="false" text="Help">
+          <items>
+            <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
+          </items>
+        </Menu>
+      </menus>
+    </MenuBar>
+    <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="493.0" prefWidth="853.0" VBox.vgrow="ALWAYS">
+      <children>
+            <SplitPane dividerPositions="0.29797979797979796" layoutX="34.0" layoutY="52.0" prefHeight="339.0" prefWidth="724.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+              <items>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0" SplitPane.resizableWithParent="false">
+                     <children>
+                        <VBox layoutX="69.0" layoutY="42.0" prefHeight="200.0" prefWidth="100.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                           <children>
+                              <AnchorPane prefHeight="122.0" prefWidth="255.0">
+                                 <children>
+                                    <RadioButton fx:id="rbConnectAWS" layoutX="12.0" layoutY="35.0" mnemonicParsing="false" selected="true" text="AWS default" AnchorPane.leftAnchor="12.0">
+                                       <toggleGroup>
+                                          <ToggleGroup fx:id="grpConnectType" />
+                                       </toggleGroup>
+                                    </RadioButton>
+                                    <RadioButton fx:id="rbConnectLocalDynamoDB" layoutX="12.0" layoutY="59.0" mnemonicParsing="false" text="localEndpoint" toggleGroup="$grpConnectType" AnchorPane.leftAnchor="12.0" />
+                                    <TextField fx:id="txtFldLocalEndpoint" layoutX="12.0" layoutY="99.0" prefHeight="25.0" prefWidth="231.0" promptText="endpoint of local DynamoDB" text="http://localhost:8000" AnchorPane.bottomAnchor="14.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                                    <Separator prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
+                                    <Label layoutX="14.0" layoutY="8.0" text="Connection target" />
+                                 </children>
+                              </AnchorPane>
+                              <AnchorPane prefHeight="98.0" prefWidth="255.0">
+                                 <children>
+                                    <Separator layoutX="14.0" layoutY="103.0" prefWidth="200.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
+                                    <TextField fx:id="txtFldTableNameCond" layoutX="12.0" layoutY="29.0" onAction="#actTableListLoad" prefHeight="25.0" prefWidth="223.0" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" AnchorPane.topAnchor="29.0" />
+                                    <ComboBox fx:id="cmbTableNameCond" layoutX="12.0" layoutY="62.0" prefHeight="25.0" prefWidth="223.0" promptText="partial match&#10;&#10;" AnchorPane.leftAnchor="12.0" AnchorPane.rightAnchor="12.0" />
+                                    <Label layoutX="12.0" layoutY="6.0" text="table name filter" />
+                                 </children>
+                              </AnchorPane>
+                              <AnchorPane prefHeight="200.0" prefWidth="200.0" VBox.vgrow="ALWAYS">
+                                 <children>
+                                    <ListView fx:id="lvTableList" layoutX="14.0" layoutY="14.0" onMouseClicked="#onLvTableListClicked" prefHeight="384.0" prefWidth="223.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                              </AnchorPane>
+                           </children>
+                        </VBox>
+                     </children>
+                  </AnchorPane>
+                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
+                     <children>
+                        <SplitPane dividerPositions="0.2687385740402194" layoutX="14.0" layoutY="-31.0" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                          <items>
+                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="137.0" prefWidth="602.0" SplitPane.resizableWithParent="false">
+                                 <children>
+                                    <Label fx:id="lblSortKey" layoutX="100.0" layoutY="60.0" text="-" />
+                                    <Label layoutX="12.0" layoutY="60.0" text="Sort key =" />
+                                    <Button id="btnTest" layoutX="360.0" layoutY="110.0" mnemonicParsing="false" onAction="#actLoad" text="Load" />
+                                    <TextField fx:id="txtFldColumnName" layoutX="10.0" layoutY="110.0" promptText="condition column" />
+                                    <TextField fx:id="txtFldCondValue" layoutX="192.0" layoutY="110.0" promptText="condition value" />
+                                    <Label layoutX="240.0" layoutY="12.0" text="Record count =" />
+                                    <Label layoutX="240.0" layoutY="36.0" text="Total size =" />
+                                    <Label fx:id="lblRecordCount" contentDisplay="RIGHT" layoutX="330.0" layoutY="12.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP">
+                                       <opaqueInsets>
+                                          <Insets />
+                                       </opaqueInsets></Label>
+                                    <Label fx:id="lblTableSize" contentDisplay="RIGHT" layoutX="330.0" layoutY="36.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP" />
+                                    <Label fx:id="lblPartitionKey" layoutX="100.0" layoutY="36.0" text="-" />
+                                    <Label layoutX="12.0" layoutY="36.0" text="Partition key =" />
+                                    <Label layoutX="12.0" layoutY="12.0" text="Table name =" />
+                                    <Label fx:id="lblTableName" layoutX="100.0" layoutY="12.0" text="-" />
+                                    <Label layoutX="12.0" layoutY="88.0" text="Load conditions" />
+                                    <Separator layoutX="124.0" layoutY="84.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
+                                    <Label layoutX="171.0" layoutY="112.0" text="=" />
+                                 </children>
+                              </AnchorPane>
+                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">
+                                 <children>
+                                    <TableView fx:id="tableResultList" prefHeight="281.0" prefWidth="591.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                 </children>
+                              </AnchorPane>
+                          </items>
+                        </SplitPane>
+                     </children>
+                  </AnchorPane>
+              </items>
+            </SplitPane>
+      </children>
+    </AnchorPane>
+  </children>
+</VBox>
