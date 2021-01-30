@@ -2,7 +2,7 @@
 
 ## Information
 
-Sorry, It's before the 1st release. but certainly you can use it.
+Sorry, It's before the 1st release. but certainly you can use it under your responsibility.
 
 ## What is this tool?
 

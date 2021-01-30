@@ -9,7 +9,7 @@
 <?import javafx.scene.paint.*?>
 <?import javafx.scene.text.*?>
 
-<VBox prefHeight="576.0" prefWidth="867.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.silverboxsoft.dynamodbtool.controller.DynamoDbToolController">
+<VBox fx:id="vboxRoot" prefHeight="576.0" prefWidth="867.0" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.silverboxsoft.dynamodbtool.controller.DynamoDbToolController">
   <children>
     <MenuBar VBox.vgrow="NEVER">
       <menus>
@@ -117,7 +117,16 @@
                               </AnchorPane>
                             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">
                                  <children>
-                                    <TableView fx:id="tableResultList" prefHeight="281.0" prefWidth="591.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" />
+                                    <TableView fx:id="tableResultList" editable="true" onKeyPressed="#onTableResultListKeyPressed" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                       <contextMenu>
+                                          <ContextMenu fx:id="contextMenuTable">
+                                            <items>
+                                                <MenuItem fx:id="menuItemTableResultListCopy" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoard" text="Copy" />
+                                                <SeparatorMenuItem mnemonicParsing="false" />
+                                              <MenuItem fx:id="menuItemTableResultListCellSelectMode" mnemonicParsing="false" onAction="#actToggleCellSelectMode" text="Switch to row select mode" />
+                                            </items>
+                                          </ContextMenu>
+                                       </contextMenu></TableView>
                                  </children>
                               </AnchorPane>
                           </items>
