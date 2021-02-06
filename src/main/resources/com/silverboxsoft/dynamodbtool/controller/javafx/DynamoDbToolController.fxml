@@ -43,6 +43,12 @@
             <MenuItem mnemonicParsing="false" text="Unselect All" />
           </items>
         </Menu>
+            <Menu mnemonicParsing="false" text="View">
+              <items>
+                <MenuItem mnemonicParsing="false" onAction="#actCloseActiveTab" text="Closee active tab" />
+                  <MenuItem mnemonicParsing="false" onAction="#actCloseAllNonActiveTab" text="Close all non active tab" />
+              </items>
+            </Menu>
         <Menu mnemonicParsing="false" text="Help">
           <items>
             <MenuItem mnemonicParsing="false" text="About MyHelloApp" />
@@ -52,7 +58,7 @@
     </MenuBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="493.0" prefWidth="853.0" VBox.vgrow="ALWAYS">
       <children>
-            <SplitPane dividerPositions="0.29797979797979796" layoutX="34.0" layoutY="52.0" prefHeight="339.0" prefWidth="724.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+            <SplitPane dividerPositions="0.26011560693641617" layoutX="34.0" layoutY="52.0" prefHeight="339.0" prefWidth="724.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
               <items>
                 <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0" SplitPane.resizableWithParent="false">
                      <children>
@@ -88,51 +94,7 @@
                         </VBox>
                      </children>
                   </AnchorPane>
-                <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="160.0" prefWidth="100.0">
-                     <children>
-                        <SplitPane dividerPositions="0.2687385740402194" layoutX="14.0" layoutY="-31.0" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                          <items>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="137.0" prefWidth="602.0" SplitPane.resizableWithParent="false">
-                                 <children>
-                                    <Label fx:id="lblSortKey" layoutX="100.0" layoutY="60.0" text="-" />
-                                    <Label layoutX="12.0" layoutY="60.0" text="Sort key =" />
-                                    <Button id="btnTest" layoutX="360.0" layoutY="110.0" mnemonicParsing="false" onAction="#actLoad" text="Load" />
-                                    <TextField fx:id="txtFldColumnName" layoutX="10.0" layoutY="110.0" promptText="condition column" />
-                                    <TextField fx:id="txtFldCondValue" layoutX="192.0" layoutY="110.0" promptText="condition value" />
-                                    <Label layoutX="240.0" layoutY="12.0" text="Record count =" />
-                                    <Label layoutX="240.0" layoutY="36.0" text="Total size =" />
-                                    <Label fx:id="lblRecordCount" contentDisplay="RIGHT" layoutX="330.0" layoutY="12.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP">
-                                       <opaqueInsets>
-                                          <Insets />
-                                       </opaqueInsets></Label>
-                                    <Label fx:id="lblTableSize" contentDisplay="RIGHT" layoutX="330.0" layoutY="36.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP" />
-                                    <Label fx:id="lblPartitionKey" layoutX="100.0" layoutY="36.0" text="-" />
-                                    <Label layoutX="12.0" layoutY="36.0" text="Partition key =" />
-                                    <Label layoutX="12.0" layoutY="12.0" text="Table name =" />
-                                    <Label fx:id="lblTableName" layoutX="100.0" layoutY="12.0" text="-" />
-                                    <Label layoutX="12.0" layoutY="88.0" text="Load conditions" />
-                                    <Separator layoutX="124.0" layoutY="84.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
-                                    <Label layoutX="171.0" layoutY="112.0" text="=" />
-                                 </children>
-                              </AnchorPane>
-                            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">
-                                 <children>
-                                    <TableView fx:id="tableResultList" editable="true" onKeyPressed="#onTableResultListKeyPressed" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
-                                       <contextMenu>
-                                          <ContextMenu fx:id="contextMenuTable">
-                                            <items>
-                                                <MenuItem fx:id="menuItemTableResultListCopy" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoard" text="Copy" />
-                                                <SeparatorMenuItem mnemonicParsing="false" />
-                                              <MenuItem fx:id="menuItemTableResultListCellSelectMode" mnemonicParsing="false" onAction="#actToggleCellSelectMode" text="Switch to row select mode" />
-                                            </items>
-                                          </ContextMenu>
-                                       </contextMenu></TableView>
-                                 </children>
-                              </AnchorPane>
-                          </items>
-                        </SplitPane>
-                     </children>
-                  </AnchorPane>
+                  <TabPane fx:id="tabPaneTable" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" />
               </items>
             </SplitPane>
       </children>

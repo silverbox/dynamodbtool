@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.*?>
+<?import javafx.scene.image.*?>
+<?import java.lang.*?>
+<?import java.util.*?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
+<?import javafx.scene.paint.*?>
+<?import javafx.scene.text.*?>
+
+<fx:root minHeight="0.0" minWidth="0.0" prefHeight="631.0" prefWidth="800.0" type="AnchorPane" xmlns="http://javafx.com/javafx/8" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <SplitPane dividerPositions="0.29252782193958665" layoutX="14.0" layoutY="-31.0" orientation="VERTICAL" prefHeight="200.0" prefWidth="160.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+         <items>
+            <AnchorPane fx:id="paneTableInfo" minHeight="0.0" minWidth="0.0" prefHeight="137.0" prefWidth="602.0" SplitPane.resizableWithParent="false">
+               <children>
+                  <Label fx:id="lblSortKey" layoutX="100.0" layoutY="60.0" text="-" />
+                  <Label layoutX="12.0" layoutY="60.0" text="Sort key =" />
+                  <Button id="btnTest" layoutX="360.0" layoutY="110.0" mnemonicParsing="false" onAction="#actLoad" text="Load" />
+                  <TextField fx:id="txtFldColumnName" layoutX="10.0" layoutY="110.0" promptText="condition column" />
+                  <TextField fx:id="txtFldCondValue" layoutX="192.0" layoutY="110.0" promptText="condition value" />
+                  <Label layoutX="360.0" layoutY="12.0" text="Record count =" />
+                  <Label layoutX="360.0" layoutY="36.0" text="Total size =" />
+                  <Label fx:id="lblRecordCount" contentDisplay="RIGHT" layoutX="450.0" layoutY="12.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP">
+                     <opaqueInsets>
+                        <Insets />
+                     </opaqueInsets>
+                  </Label>
+                  <Label fx:id="lblTableSize" contentDisplay="RIGHT" layoutX="450.0" layoutY="36.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP" />
+                  <Label fx:id="lblPartitionKey" layoutX="100.0" layoutY="36.0" text="-" />
+                  <Label layoutX="12.0" layoutY="36.0" text="Partition key =" />
+                  <Label layoutX="12.0" layoutY="12.0" text="Table name =" />
+                  <Label fx:id="lblTableName" layoutX="100.0" layoutY="12.0" text="-" />
+                  <Label layoutX="12.0" layoutY="88.0" text="Load conditions" />
+                  <Separator layoutX="124.0" layoutY="84.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
+                  <Label layoutX="171.0" layoutY="112.0" text="=" />
+               </children>
+            </AnchorPane>
+            <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">
+               <children>
+                  <TableView fx:id="tableResultList" editable="true" onKeyPressed="#onTableResultListKeyPressed" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                     <contextMenu>
+                        <ContextMenu fx:id="contextMenuTable">
+                           <items>
+                              <MenuItem fx:id="menuItemTableResultListCopy" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoard" text="Copy" />
+                              <SeparatorMenuItem mnemonicParsing="false" />
+                              <MenuItem fx:id="menuItemTableResultListCellSelectMode" mnemonicParsing="false" onAction="#actToggleCellSelectMode" text="Switch to row select mode" />
+                           </items>
+                        </ContextMenu>
+                     </contextMenu>
+                  </TableView>
+               </children>
+            </AnchorPane>
+         </items>
+      </SplitPane>
+   </children>
+</fx:root>
