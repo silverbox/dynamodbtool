@@ -5,7 +5,12 @@ import lombok.Data;
 @Data
 public class DynamoDbConnectInfo {
 
-	private String endpointUrl;
+	private final String endpointUrl;
 
-	private DynamoDbConnectType connectType;
+	private final DynamoDbConnectType connectType;
+
+	public DynamoDbConnectInfo(DynamoDbConnectType connectType, String endpointUrl) {
+		this.endpointUrl = endpointUrl;
+		this.connectType = connectType;
+	}
 }
