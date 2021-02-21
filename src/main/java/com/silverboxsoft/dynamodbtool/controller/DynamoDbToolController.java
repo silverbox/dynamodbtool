@@ -102,6 +102,13 @@ public class DynamoDbToolController implements Initializable {
 	}
 
 	@FXML
+	protected void onLvTableListClicked(MouseEvent ev) throws URISyntaxException {
+		if (ev.getClickCount() >= 2) {
+			actTableDecided();
+		}
+	}
+
+	@FXML
 	protected void actCloseActiveTab(ActionEvent ev) {
 		int activeIndex = tabPaneTable.getSelectionModel().getSelectedIndex();
 		if (tabPaneTable.getTabs().size() > 1) {
@@ -137,13 +144,6 @@ public class DynamoDbToolController implements Initializable {
 				dialog.close();
 			}
 		});
-	}
-
-	@FXML
-	protected void onLvTableListClicked(MouseEvent ev) throws URISyntaxException {
-		if (ev.getClickCount() >= 2) {
-			actTableDecided();
-		}
 	}
 
 	/*

@@ -5,6 +5,8 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Map;
+import java.util.Optional;
 
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbCondition;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionJoinType;
@@ -36,8 +38,10 @@ import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
 import javafx.util.Pair;
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
@@ -95,6 +99,8 @@ public class DynamoDbTable extends AnchorPane {
 	private Alert dialog;
 	private DynamoDbConnectInfo connInfo;
 	private String tableName;
+	private DynamoDbResult dynamoDbResult;
+	private DynamoDbRecordInputDialog inputDialog;
 
 	public DynamoDbTable() {
 		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
@@ -128,6 +134,10 @@ public class DynamoDbTable extends AnchorPane {
 		tableResultList.getSelectionModel().setCellSelectionEnabled(isCellSelectMode);
 	}
 
+	/*
+	 * event handler
+	 */
+
 	@FXML
 	protected void actLoad(ActionEvent ev) throws URISyntaxException {
 		startWaiting();
@@ -148,6 +158,7 @@ public class DynamoDbTable extends AnchorPane {
 				ScanDao dao = new ScanDao(connInfo);
 				result = dao.getResult(currentTableInfo);
 			}
+			this.dynamoDbResult = result;
 			setTable(result);
 		} finally {
 			finishWaiting();
@@ -181,6 +192,13 @@ public class DynamoDbTable extends AnchorPane {
 	}
 
 	@FXML
+	protected void onMouseClicked(MouseEvent ev) {
+		if (ev.getClickCount() >= 2) {
+			actShowInputDialog();
+		}
+	}
+
+	@FXML
 	protected void actToggleCellSelectMode(ActionEvent ev) {
 		isCellSelectMode = !isCellSelectMode;
 		if (isCellSelectMode) {
@@ -189,6 +207,26 @@ public class DynamoDbTable extends AnchorPane {
 			menuItemTableResultListCellSelectMode.setText("Switch to cell select mode");
 		}
 		tableResultList.getSelectionModel().setCellSelectionEnabled(isCellSelectMode);
+	}
+
+	/*
+	 * normal methods
+	 */
+
+	private void actShowInputDialog() {
+		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
+		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
+		if (posList.size() == 0) {
+			return;
+		}
+		int row = posList.get(0).getValue();
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+
+		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec);
+		Optional<Map<String, AttributeValue>> newRec = dialog.showAndWait();
+		if (newRec.isPresent()) {
+			// TODO
+		}
 	}
 
 	private String getWholeTableSelectedCellString(TableViewSelectionModel<ObservableList<String>> selectedModel) {

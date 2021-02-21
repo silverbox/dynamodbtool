@@ -39,7 +39,7 @@
             </AnchorPane>
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">
                <children>
-                  <TableView fx:id="tableResultList" editable="true" onKeyPressed="#onTableResultListKeyPressed" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                  <TableView fx:id="tableResultList" onKeyPressed="#onTableResultListKeyPressed" onMouseClicked="#onMouseClicked" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <contextMenu>
                         <ContextMenu fx:id="contextMenuTable">
                            <items>
