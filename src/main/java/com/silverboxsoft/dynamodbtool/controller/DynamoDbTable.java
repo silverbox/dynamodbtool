@@ -13,6 +13,8 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionJoinType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult;
+import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog;
+import com.silverboxsoft.dynamodbtool.dao.PutItemDao;
 import com.silverboxsoft.dynamodbtool.dao.QueryDao;
 import com.silverboxsoft.dynamodbtool.dao.ScanDao;
 import com.silverboxsoft.dynamodbtool.dao.TableInfoDao;
@@ -24,6 +26,7 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
@@ -100,7 +103,6 @@ public class DynamoDbTable extends AnchorPane {
 	private DynamoDbConnectInfo connInfo;
 	private String tableName;
 	private DynamoDbResult dynamoDbResult;
-	private DynamoDbRecordInputDialog inputDialog;
 
 	public DynamoDbTable() {
 		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
@@ -110,16 +112,23 @@ public class DynamoDbTable extends AnchorPane {
 		try {
 			fxmlLoader.load();
 		} catch (IOException exception) {
+			Alert alert = new Alert(AlertType.ERROR, exception.getMessage());
+			alert.show();
 			throw new RuntimeException(exception);
 		}
 	}
 
-	public void initialize(DynamoDbConnectInfo connInfo, String tableName, Alert dialog) throws URISyntaxException {
+	public void initialize(DynamoDbConnectInfo connInfo, String tableName, Alert dialog) {
 
 		this.connInfo = connInfo;
 		this.tableName = tableName;
 		this.dialog = dialog;
-		setCurrentTableInfo();
+		try {
+			setCurrentTableInfo();
+		} catch (Exception e) {
+			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+			alert.show();
+		}
 	}
 
 	private void setCurrentTableInfo() throws URISyntaxException {
@@ -139,7 +148,7 @@ public class DynamoDbTable extends AnchorPane {
 	 */
 
 	@FXML
-	protected void actLoad(ActionEvent ev) throws URISyntaxException {
+	protected void actLoad(ActionEvent ev) {
 		startWaiting();
 		try {
 			String condColumn = txtFldColumnName.getText();
@@ -160,6 +169,9 @@ public class DynamoDbTable extends AnchorPane {
 			}
 			this.dynamoDbResult = result;
 			setTable(result);
+		} catch (Exception e) {
+			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+			alert.show();
 		} finally {
 			finishWaiting();
 		}
@@ -193,8 +205,13 @@ public class DynamoDbTable extends AnchorPane {
 
 	@FXML
 	protected void onMouseClicked(MouseEvent ev) {
-		if (ev.getClickCount() >= 2) {
-			actShowInputDialog();
+		try {
+			if (ev.getClickCount() >= 2) {
+				actShowInputDialog();
+			}
+		} catch (Exception e) {
+			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+			alert.show();
 		}
 	}
 
@@ -213,7 +230,7 @@ public class DynamoDbTable extends AnchorPane {
 	 * normal methods
 	 */
 
-	private void actShowInputDialog() {
+	private void actShowInputDialog() throws URISyntaxException {
 		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
 		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
 		if (posList.size() == 0) {
@@ -223,9 +240,14 @@ public class DynamoDbTable extends AnchorPane {
 		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
 
 		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec);
-		Optional<Map<String, AttributeValue>> newRec = dialog.showAndWait();
-		if (newRec.isPresent()) {
-			// TODO
+		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
+		if (newRecWk.isPresent()) {
+			PutItemDao dao = new PutItemDao(connInfo);
+			Map<String, AttributeValue> newRec = newRecWk.get();
+			dynamoDbResult.updateRecord(row, newRec);
+			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
+			tableResultList.getItems().set(row, tableRec);
+			dao.putItem(currentTableInfo, newRec);
 		}
 	}
 

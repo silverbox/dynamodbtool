@@ -1,4 +1,4 @@
-package com.silverboxsoft.dynamodbtool.controller;
+package com.silverboxsoft.dynamodbtool.controller.inputdialog;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,6 +17,22 @@ public abstract class AbsDynamoDbSetInputDialog<R> extends AbsDynamoDbInputDialo
 	}
 
 	@Override
+	protected List<R> getCurrentDynamoDbRecord() {
+		List<R> retList = new ArrayList<R>();
+
+		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
+		for (List<Node> wkNodeList : currentBodyNodeList) {
+			CheckBox delCheck = (CheckBox) wkNodeList.get(1);
+			if (delCheck.isSelected()) {
+				continue;
+			}
+			HBox valuebox = (HBox) wkNodeList.get(0);
+			retList.add(getCurrentAttrubuteValue(valuebox));
+		}
+		return retList;
+	}
+
+	@Override
 	protected List<Node> getHeaderLabelList() {
 		Label valTtilelabel = getContentLabel("VALUE", true);
 		Label delTtilelabel = getContentLabel("DEL", true);
@@ -29,10 +45,11 @@ public abstract class AbsDynamoDbSetInputDialog<R> extends AbsDynamoDbInputDialo
 	@Override
 	protected List<List<Node>> getBodyAttribueNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
-		for (int recIdx = 0; recIdx < getDynamoDbRecord().size(); recIdx++) {
-			R attrVal = getDynamoDbRecord().get(recIdx);
+		for (int recIdx = 0; recIdx < getDynamoDbRecordOrg().size(); recIdx++) {
+			R attrVal = getDynamoDbRecordOrg().get(recIdx);
 			HBox valuebox = getAttrubuteBox(retList.size(), attrVal);
 			CheckBox delCheck = new CheckBox();
+			delCheck.setId(DEL_ID_PREFIX + String.valueOf(recIdx));
 			List<Node> nodeList = new ArrayList<>();
 			nodeList.add(valuebox);
 			nodeList.add(delCheck);
@@ -42,11 +59,17 @@ public abstract class AbsDynamoDbSetInputDialog<R> extends AbsDynamoDbInputDialo
 	}
 
 	@Override
-	protected AttributeValue getAttributeValue(String btnId) {
+	protected AttributeValue getCurrentAttribute(String btnId) {
 		return null;
+	}
+
+	@Override
+	void callBackSetNewAttribute(String btnId, AttributeValue attrVal) {
 	}
 
 	abstract String getTypeString();
 
 	abstract HBox getAttrubuteBox(int recIndex, R attr);
+
+	abstract R getCurrentAttrubuteValue(HBox valuebox);
 }

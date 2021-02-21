@@ -1,8 +1,13 @@
-package com.silverboxsoft.dynamodbtool.controller;
+package com.silverboxsoft.dynamodbtool.controller.inputdialog;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.stream.Collectors;
+
+import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
 import javafx.geometry.Pos;
 import javafx.scene.Node;
@@ -20,22 +25,31 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 
 	private final GridPane grid;
-	private R dynamoDbRecord;
+	private R dynamoDbRecordOrg;
+	List<List<Node>> orgBodyAttribueNodeList = new ArrayList<>();
+	List<List<Node>> addBodyAttribueNodeList = new ArrayList<>();
 
 	protected static final int HGAP = 20;
 	protected static final int VGAP = 5;
 	protected static final int FILELD_WIDTH = 300;
-	protected static final String BTN_ID_PREFIX = "btnEdit";
+	protected static final String STRFLD_ID_PREFIX = "txtEdit_";
+	protected static final String NUMFLD_ID_PREFIX = "numEdit_";
+	protected static final String BINFLD_ID_PREFIX = "binEdit_";
+	protected static final String VALLBL_ID_PREFIX = "valLabel_";
+	protected static final String BTN_ID_PREFIX = "btnEdit_";
+	protected static final String DEL_ID_PREFIX = "ckbDel_";
 	protected static final String BTN_TITLE = "Edit";
 
 	public AbsDynamoDbInputDialog(R dynamoDbRecord) {
 		this.setResizable(true);
-		this.dynamoDbRecord = dynamoDbRecord;
+		this.dynamoDbRecordOrg = dynamoDbRecord;
 		this.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 
 		setResultConverter((dialogButton) -> {
 			ButtonData data = dialogButton == null ? null : dialogButton.getButtonData();
-			return data == ButtonData.OK_DONE ? dynamoDbRecord : null;
+			return data == ButtonData.OK_DONE
+					? getCurrentDynamoDbRecord()
+					: null;
 		});
 
 		this.grid = new GridPane();
@@ -43,10 +57,12 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 		this.grid.setVgap(VGAP);
 		this.grid.setMaxWidth(Double.MAX_VALUE);
 		this.grid.setAlignment(Pos.CENTER);
-		initialize();
+		this.initialize();
 	}
 
-	private void initialize() {
+	abstract R getCurrentDynamoDbRecord();
+
+	protected void initialize() {
 		getGridPane().getChildren().clear();
 
 		List<Node> labelList = getHeaderLabelList();
@@ -54,9 +70,9 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 			getGridPane().add(labelList.get(cIdx), cIdx, 0);
 		}
 
-		List<List<Node>> bodyAttribueNodeList = getBodyAttribueNodeList();
-		for (int rIdx = 0; rIdx < bodyAttribueNodeList.size(); rIdx++) {
-			List<Node> nodelList = bodyAttribueNodeList.get(rIdx);
+		orgBodyAttribueNodeList = getBodyAttribueNodeList();
+		for (int rIdx = 0; rIdx < orgBodyAttribueNodeList.size(); rIdx++) {
+			List<Node> nodelList = orgBodyAttribueNodeList.get(rIdx);
 			for (int cIdx = 0; cIdx < nodelList.size(); cIdx++) {
 				getGridPane().add(nodelList.get(cIdx), cIdx, rIdx + 1);
 			}
@@ -68,14 +84,30 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 
 	abstract List<List<Node>> getBodyAttribueNodeList();
 
-	abstract AttributeValue getAttributeValue(String btnId);
+	abstract AttributeValue getCurrentAttribute(String btnId);
+
+	abstract void callBackSetNewAttribute(String btnId, AttributeValue attrVal);
+
+	protected void addAttributeNodeList(List<Node> newNodeList) {
+		int newIdx = orgBodyAttribueNodeList.size() + addBodyAttribueNodeList.size();
+		for (int cIdx = 0; cIdx < newNodeList.size(); cIdx++) {
+			getGridPane().add(newNodeList.get(cIdx), cIdx, newIdx + 1);
+		}
+	};
 
 	protected GridPane getGridPane() {
 		return this.grid;
 	}
 
-	protected R getDynamoDbRecord() {
-		return dynamoDbRecord;
+	protected R getDynamoDbRecordOrg() {
+		return dynamoDbRecordOrg;
+	}
+
+	protected List<List<Node>> getCurrentBodyNodeList() {
+		List<List<Node>> curNodeList = new ArrayList<>();
+		curNodeList.addAll(orgBodyAttribueNodeList);
+		curNodeList.addAll(addBodyAttribueNodeList);
+		return curNodeList;
 	}
 
 	protected Label getContentLabel(String text, boolean isBold) {
@@ -110,6 +142,11 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 		return hbox;
 	}
 
+	protected boolean getBooleanValue(HBox hbox) {
+		RadioButton radioButtonTrue = (RadioButton) hbox.getChildren().get(0);
+		return radioButtonTrue.isSelected();
+	}
+
 	protected HBox getNullViewLabel() {
 		HBox hbox = new HBox(HGAP);
 		Label vallabel = getContentLabel("<null>");
@@ -118,36 +155,47 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 	}
 
 	protected void actOpenEditDialog(String btnId) {
-		AttributeValue attrVal = getAttributeValue(btnId);
+		AttributeValue attrVal = getCurrentAttribute(btnId);
 		if (attrVal.hasSs()) {
 			DynamoDbStringSetInputDialog dialog = new DynamoDbStringSetInputDialog(attrVal.ss());
 			Optional<List<String>> newRec = dialog.showAndWait();
 			if (newRec.isPresent()) {
-				// TODO
+				AttributeValue attrValue = AttributeValue.builder().ss(newRec.get()).build();
+				callBackSetNewAttribute(btnId, attrValue);
 			}
 		} else if (attrVal.hasNs()) {
-			DynamoDbNumberSetInputDialog dialog = new DynamoDbNumberSetInputDialog(attrVal.ns());
-			Optional<List<String>> newRec = dialog.showAndWait();
+			List<BigDecimal> setList = attrVal.ns().stream()
+					.map(strval -> DynamoDbUtils.getBigDecimal(strval))
+					.collect(Collectors.toList());
+			DynamoDbNumberSetInputDialog dialog = new DynamoDbNumberSetInputDialog(setList);
+			Optional<List<BigDecimal>> newRec = dialog.showAndWait();
 			if (newRec.isPresent()) {
-				// TODO
+				List<String> numStrList = newRec.get().stream()
+						.map(bd -> DynamoDbUtils.getNumStr(bd))
+						.collect(Collectors.toList());
+				AttributeValue attrValue = AttributeValue.builder().ns(numStrList).build();
+				callBackSetNewAttribute(btnId, attrValue);
 			}
 		} else if (attrVal.hasBs()) {
 			DynamoDbBinarySetInputDialog dialog = new DynamoDbBinarySetInputDialog(attrVal.bs());
 			Optional<List<SdkBytes>> newRec = dialog.showAndWait();
 			if (newRec.isPresent()) {
-				// TODO
+				AttributeValue attrValue = AttributeValue.builder().bs(newRec.get()).build();
+				callBackSetNewAttribute(btnId, attrValue);
 			}
 		} else if (attrVal.hasM()) {
 			DynamoDbMapInputDialog dialog = new DynamoDbMapInputDialog(attrVal.m());
 			Optional<Map<String, AttributeValue>> newRec = dialog.showAndWait();
 			if (newRec.isPresent()) {
-				// TODO
+				AttributeValue attrValue = AttributeValue.builder().m(newRec.get()).build();
+				callBackSetNewAttribute(btnId, attrValue);
 			}
 		} else if (attrVal.hasL()) {
 			DynamoDbListInputDialog dialog = new DynamoDbListInputDialog(attrVal.l());
 			Optional<List<AttributeValue>> newRec = dialog.showAndWait();
 			if (newRec.isPresent()) {
-				// TODO
+				AttributeValue attrValue = AttributeValue.builder().l(newRec.get()).build();
+				callBackSetNewAttribute(btnId, attrValue);
 			}
 		}
 	}

@@ -1,17 +1,29 @@
 package com.silverboxsoft.dynamodbtool.utils;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Base64;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeDefinition;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.GlobalSecondaryIndexDescription;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
+import software.amazon.awssdk.services.dynamodb.model.KeyType;
 import software.amazon.awssdk.services.dynamodb.model.ScalarAttributeType;
+import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 public class DynamoDbUtils {
+
+	public static final String NO_VALSTR = "<unset>";
 
 	public DynamoDbUtils(DynamoDbConnectInfo connInfo) throws Exception {
 		throw new Exception("it's util class");
@@ -19,7 +31,7 @@ public class DynamoDbUtils {
 
 	public static String getAttrString(AttributeValue attrVal) {
 		if (attrVal == null) {
-			return "<noattr>";
+			return NO_VALSTR;
 		} else if (attrVal.s() != null) {
 			return attrVal.s();
 		} else if (attrVal.n() != null) {
@@ -50,7 +62,7 @@ public class DynamoDbUtils {
 
 	public static String getAttrTypeString(AttributeValue attrVal) {
 		if (attrVal == null) {
-			return "<noattr>";
+			return NO_VALSTR;
 		} else if (attrVal.s() != null) {
 			return "STRING";
 		} else if (attrVal.n() != null) {
@@ -124,13 +136,80 @@ public class DynamoDbUtils {
 		return DynamoDbColumnType.NULL;
 	}
 
+	/*
+	 * sdkbytes converter
+	 */
 	public static String getBase64StringFromSdkBytes(SdkBytes sdkByte) {
 		return Base64.getEncoder().encodeToString(sdkByte.asByteArray());
+	}
+
+	public static SdkBytes getSdkBytesFromBase64String(String base64Str) {
+		byte[] byteAry = Base64.getDecoder().decode(base64Str);
+		return SdkBytes.fromByteArray(byteAry);
+	}
+
+	/*
+	 * number converter
+	 */
+	public static String getNumStr(BigDecimal num) {
+		return num.toString();
+	}
+
+	public static BigDecimal getBigDecimal(String str) {
+		return new BigDecimal(str);
 	}
 
 	// work around of AttributeValue#nul()
 	public static boolean isNullAttr(AttributeValue attrVal) {
 		String wkStr = attrVal.toString();
 		return wkStr.equals("AttributeValue(NUL=true)");
+	}
+
+	public static List<DynamoDbColumn> getSortedSchemeAttrNameList(TableDescription tableInfo) {
+		KeySchemaElement partitionKeyElem = null;
+		KeySchemaElement sortKeyElem = null;
+		List<DynamoDbColumn> columnList = new ArrayList<>();
+		Map<String, Integer> colNameIndex = new HashMap<>();
+		List<KeySchemaElement> keyInfos = tableInfo.keySchema();
+		// prepare Key Info
+		for (KeySchemaElement k : keyInfos) {
+			if (k.keyType() == KeyType.HASH) {
+				partitionKeyElem = k;
+			} else if (k.keyType() == KeyType.RANGE) {
+				sortKeyElem = k;
+			}
+		}
+		boolean isPartitionKeySet = false;
+		Map<String, DynamoDbColumn> wkGsiColMap = new HashMap<>();
+		// at first, set key column info
+		for (AttributeDefinition attr : tableInfo.attributeDefinitions()) {
+			String colName = attr.attributeName();
+			DynamoDbColumn dbCol = new DynamoDbColumn();
+			dbCol.setColumnName(colName);
+			dbCol.setColumnType(DynamoDbUtils.getDynamoDbColumnType(attr));
+			if (colName.equals(partitionKeyElem.attributeName())) {
+				colNameIndex.put(colName, 0);
+				columnList.add(0, dbCol);
+				isPartitionKeySet = true;
+			} else if (colName.equals(sortKeyElem.attributeName())) {
+				colNameIndex.put(colName, 1);
+				columnList.add(isPartitionKeySet ? 1 : 0, dbCol);
+			} else {
+				wkGsiColMap.put(colName, dbCol);
+			}
+		}
+
+		// add global secondary index
+		for (GlobalSecondaryIndexDescription gsiDesc : tableInfo.globalSecondaryIndexes()) {
+			List<KeySchemaElement> wkKeyInfos = gsiDesc.keySchema();
+			for (KeySchemaElement kse : wkKeyInfos) {
+				String gsiColName = kse.attributeName();
+				if (!colNameIndex.containsKey(gsiColName)) {
+					colNameIndex.put(gsiColName, columnList.size());
+					columnList.add(wkGsiColMap.get(gsiColName));
+				}
+			}
+		}
+		return columnList;
 	}
 }

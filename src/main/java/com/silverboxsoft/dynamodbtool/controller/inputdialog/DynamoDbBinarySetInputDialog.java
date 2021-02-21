@@ -1,4 +1,4 @@
-package com.silverboxsoft.dynamodbtool.controller;
+package com.silverboxsoft.dynamodbtool.controller.inputdialog;
 
 import java.util.List;
 
@@ -27,5 +27,11 @@ public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkB
 		Control control = textField;
 		hbox.getChildren().addAll(control);
 		return hbox;
+	}
+
+	@Override
+	SdkBytes getCurrentAttrubuteValue(HBox valuebox) {
+		TextField valField = (TextField) valuebox.getChildren().get(0);
+		return DynamoDbUtils.getSdkBytesFromBase64String(valField.getText());
 	};
 }
