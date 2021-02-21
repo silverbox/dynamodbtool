@@ -1,6 +1,7 @@
 package com.silverboxsoft.dynamodbtool.controller.inputdialog;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -10,22 +11,29 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn;
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
 import javafx.scene.Node;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.TextField;
+import javafx.scene.layout.HBox;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
-	private List<DynamoDbColumn> columnList = new ArrayList<>();
+	private List<DynamoDbColumn> tblStructColumnList = new ArrayList<>();
+	private Set<String> keyColumnSet = new HashSet<>();
 
 	public DynamoDbRecordInputDialog(TableDescription tableInfo, Map<String, AttributeValue> dynamoDbRecord) {
 		super(dynamoDbRecord);
-		columnList = DynamoDbUtils.getSortedSchemeAttrNameList(tableInfo);
+		tblStructColumnList = DynamoDbUtils.getSortedSchemeAttrNameList(tableInfo);
+		List<KeySchemaElement> keyInfos = tableInfo.keySchema();
+		keyInfos.stream().forEach(elem -> keyColumnSet.add(elem.attributeName()));
 		this.initialize(); // TODO work around
 	}
 
 	@Override
 	protected List<List<Node>> getBodyAttribueNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
-		if (columnList == null) {
+		if (tblStructColumnList == null) {
 			return retList;
 		}
 		if (attrNameList == null) {
@@ -33,8 +41,8 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 		}
 
 		// add key info first
-		for (int colIdx = 0; colIdx < columnList.size(); colIdx++) {
-			String attrName = columnList.get(colIdx).getColumnName();
+		for (int colIdx = 0; colIdx < tblStructColumnList.size(); colIdx++) {
+			String attrName = tblStructColumnList.get(colIdx).getColumnName();
 			retList.add(getOneNodeList(attrName, getDynamoDbRecordOrg().get(attrName)));
 			attrNameList.add(attrName);
 		}
@@ -50,6 +58,22 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 			attrNameList.add(newAttrName);
 		}
 
+		return retList;
+	}
+
+	protected List<Node> getOneNodeList(String attrName, AttributeValue attrValue) {
+		List<Node> retList = super.getOneNodeList(attrName, attrValue);
+		if (keyColumnSet.contains(attrName)) {
+			HBox valuebox = (HBox) retList.get(2);
+			Node valNode = valuebox.getChildren().get(0);
+			if (valNode instanceof TextField) {
+				TextField textField = (TextField) valNode;
+				textField.setStyle("-fx-background-color: lightgray;");
+				textField.setEditable(false);
+			}
+			CheckBox delbox = (CheckBox) retList.get(3);
+			delbox.setDisable(true);
+		}
 		return retList;
 	}
 }

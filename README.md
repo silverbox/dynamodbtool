@@ -14,6 +14,9 @@ Not only AWS DynamoDB but also local DynamoDB available. It's not service with b
 - Not only AWS DynamoDB but also local DynamoDB available.
 - You can use it without any web browser.
 - Show basic info of the table(record count, size, key information)
+- Copy selected cell string to PC'S clipboard.
+- Detail information dialog available.
+- Update the record. (Especially, please use it under your responsibility)
 
 ## Requirement
 
@@ -87,3 +90,7 @@ java --module-path {PATH_TO_LIB} --add-modules=javafx.controls,javafx.fxml -jar 
 1. you can see the information of target table at right up area.
 1. specify the value of condition if required.
 1. click the ```Load``` button.
+1. You can range select. and copy selected cells string to clipboard.
+1. If you double click a Table record, then you can see detail dialog.
+1. You can edit the value by edit the field(Scalar type value).
+1. You can edit the value by open child dialog(Set, Document type value).
