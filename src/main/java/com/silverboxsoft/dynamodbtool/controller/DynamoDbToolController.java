@@ -89,15 +89,30 @@ public class DynamoDbToolController implements Initializable {
 	}
 
 	@FXML
-	protected void actTableListLoad(ActionEvent ev) throws URISyntaxException {
+	protected void actTableListLoad(ActionEvent ev) {
 		startWaiting();
 		try {
 			TableListDao dao = new TableListDao(getConnectInfo());
 			TableNameCondType conditionType = TableNameCondType.getByName(cmbTableNameCond.getValue());
 			lvTableList.getItems().clear();
 			lvTableList.getItems().addAll(dao.getTableList(txtFldTableNameCond.getText(), conditionType));
+		} catch (Exception e) {
+			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+			alert.show();
 		} finally {
 			finishWaiting();
+		}
+	}
+
+	@FXML
+	protected void onLvTableListClicked(MouseEvent ev) {
+		try {
+			if (ev.getClickCount() >= 2) {
+				actTableDecided();
+			}
+		} catch (Exception e) {
+			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+			alert.show();
 		}
 	}
 
@@ -137,13 +152,6 @@ public class DynamoDbToolController implements Initializable {
 				dialog.close();
 			}
 		});
-	}
-
-	@FXML
-	protected void onLvTableListClicked(MouseEvent ev) throws URISyntaxException {
-		if (ev.getClickCount() >= 2) {
-			actTableDecided();
-		}
 	}
 
 	/*
