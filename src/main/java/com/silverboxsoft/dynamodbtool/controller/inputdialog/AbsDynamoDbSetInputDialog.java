@@ -7,18 +7,23 @@ import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public abstract class AbsDynamoDbSetInputDialog<R> extends AbsDynamoDbInputDialog<List<R>> {
+public abstract class AbsDynamoDbSetInputDialog<T> extends AbsDynamoDbInputDialog<List<T>> {
 
-	public AbsDynamoDbSetInputDialog(List<R> dynamoDbRecord) {
+	public AbsDynamoDbSetInputDialog(List<T> dynamoDbRecord) {
 		super(dynamoDbRecord);
 		this.setTitle(String.format("Edit set of %s", getTypeString()));
 	}
 
+	abstract String getTypeString();
+
+	abstract HBox getAttrubuteBox(int recIndex, T attr);
+
+	abstract T getCurrentAttrubuteValue(HBox valuebox);
+
 	@Override
-	protected List<R> getCurrentDynamoDbRecord() {
-		List<R> retList = new ArrayList<R>();
+	protected List<T> getCurrentDynamoDbRecord() {
+		List<T> retList = new ArrayList<T>();
 
 		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
 		for (List<Node> wkNodeList : currentBodyNodeList) {
@@ -46,7 +51,7 @@ public abstract class AbsDynamoDbSetInputDialog<R> extends AbsDynamoDbInputDialo
 	protected List<List<Node>> getBodyAttribueNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
 		for (int recIdx = 0; recIdx < getDynamoDbRecordOrg().size(); recIdx++) {
-			R attrVal = getDynamoDbRecordOrg().get(recIdx);
+			T attrVal = getDynamoDbRecordOrg().get(recIdx);
 			HBox valuebox = getAttrubuteBox(retList.size(), attrVal);
 			CheckBox delCheck = new CheckBox();
 			delCheck.setId(DEL_ID_PREFIX + String.valueOf(recIdx));
@@ -57,19 +62,4 @@ public abstract class AbsDynamoDbSetInputDialog<R> extends AbsDynamoDbInputDialo
 		}
 		return retList;
 	}
-
-	@Override
-	protected AttributeValue getCurrentAttribute(String btnId) {
-		return null;
-	}
-
-	@Override
-	void callBackSetNewAttribute(String btnId, AttributeValue attrVal) {
-	}
-
-	abstract String getTypeString();
-
-	abstract HBox getAttrubuteBox(int recIndex, R attr);
-
-	abstract R getCurrentAttrubuteValue(HBox valuebox);
 }
