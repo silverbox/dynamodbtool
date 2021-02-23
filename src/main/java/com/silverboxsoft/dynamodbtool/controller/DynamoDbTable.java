@@ -242,12 +242,13 @@ public class DynamoDbTable extends AnchorPane {
 		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec);
 		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
 		if (newRecWk.isPresent()) {
-			PutItemDao dao = new PutItemDao(connInfo);
 			Map<String, AttributeValue> newRec = newRecWk.get();
+			PutItemDao dao = new PutItemDao(connInfo);
+			dao.putItem(currentTableInfo, newRec);
+
 			dynamoDbResult.updateRecord(row, newRec);
 			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
 			tableResultList.getItems().set(row, tableRec);
-			dao.putItem(currentTableInfo, newRec);
 		}
 	}
 

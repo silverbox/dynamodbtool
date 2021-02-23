@@ -15,10 +15,12 @@ public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkB
 		super(dynamoDbRecord);
 	}
 
+	@Override
 	protected String getTypeString() {
 		return "BINARY";
 	};
 
+	@Override
 	protected HBox getAttrubuteBox(int recIndex, SdkBytes attr) {
 		HBox hbox = new HBox();
 		TextField textField = new TextField();
@@ -30,8 +32,8 @@ public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkB
 	}
 
 	@Override
-	SdkBytes getCurrentAttrubuteValue(HBox valuebox) {
+	protected SdkBytes getCurrentAttrubuteValue(HBox valuebox) {
 		TextField valField = (TextField) valuebox.getChildren().get(0);
 		return DynamoDbUtils.getSdkBytesFromBase64String(valField.getText());
-	};
+	}
 }

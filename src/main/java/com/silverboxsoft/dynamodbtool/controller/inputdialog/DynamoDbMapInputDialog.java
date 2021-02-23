@@ -18,7 +18,7 @@ import javafx.scene.layout.HBox;
 import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
-public class DynamoDbMapInputDialog extends AbsDynamoDbInputDialog<Map<String, AttributeValue>> {
+public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<String, AttributeValue>> {
 
 	protected List<String> attrNameList = null;
 	private Map<String, AttributeValue> updAttributeMap = new HashMap<>();

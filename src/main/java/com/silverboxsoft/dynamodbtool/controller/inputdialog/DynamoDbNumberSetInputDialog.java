@@ -15,6 +15,7 @@ public class DynamoDbNumberSetInputDialog extends AbsDynamoDbSetInputDialog<BigD
 		super(dynamoDbRecord);
 	}
 
+	@Override
 	protected String getTypeString() {
 		return "NUMBER";
 	};

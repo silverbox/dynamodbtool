@@ -12,10 +12,12 @@ public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<Stri
 		super(dynamoDbRecord);
 	}
 
+	@Override
 	protected String getTypeString() {
 		return "STRING";
 	};
 
+	@Override
 	protected HBox getAttrubuteBox(int recIndex, String attr) {
 		HBox hbox = new HBox();
 		TextField textField = new TextField();
@@ -27,7 +29,7 @@ public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<Stri
 	}
 
 	@Override
-	String getCurrentAttrubuteValue(HBox valuebox) {
+	protected String getCurrentAttrubuteValue(HBox valuebox) {
 		TextField valField = (TextField) valuebox.getChildren().get(0);
 		return valField.getText();
 	};
