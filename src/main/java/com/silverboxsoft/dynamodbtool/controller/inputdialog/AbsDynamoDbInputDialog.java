@@ -9,6 +9,7 @@ import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.OverrunStyle;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.GridPane;
@@ -111,7 +112,8 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 		label.setMaxWidth(Double.MAX_VALUE);
 		label.setMaxHeight(Double.MAX_VALUE);
 		label.getStyleClass().add("content");
-		label.setWrapText(true);
+		label.setWrapText(false);
+		label.setTextOverrun(OverrunStyle.ELLIPSIS);
 		label.setText(text);
 		return label;
 	}
