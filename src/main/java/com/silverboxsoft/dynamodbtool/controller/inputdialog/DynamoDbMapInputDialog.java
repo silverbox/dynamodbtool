@@ -10,7 +10,6 @@ import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
@@ -26,6 +25,21 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	public DynamoDbMapInputDialog(Map<String, AttributeValue> dynamoDbRecord) {
 		super(dynamoDbRecord);
 	}
+
+	@Override
+	protected List<Integer> getHeaderWidthList() {
+		List<Integer> retList = new ArrayList<>();
+		retList.add(NAME_COL_WIDTH);
+		retList.add(NAME_COL_WIDTH);
+		retList.add(FILELD_WIDTH);
+		retList.add(DEL_COL_WIDTH);
+		return retList;
+	};
+
+	@Override
+	protected int getValueColIndex() {
+		return 2;
+	};
 
 	@Override
 	protected List<Node> getHeaderLabelList() {
@@ -57,23 +71,21 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	protected List<Node> getOneNodeList(String attrName, AttributeValue attrValue) {
 		Label typelabel = getContentLabel(DynamoDbUtils.getAttrTypeString(attrValue));
 		Label keylabel = getContentLabel(attrName);
-		HBox valuebox = getAtrributeBox(attrName, attrValue);
+		Node valueNode = getAtrributeBox(attrName, attrValue);
 		CheckBox delCheck = new CheckBox();
 		delCheck.setId(DEL_ID_PREFIX + attrName);
 		List<Node> nodeList = new ArrayList<>();
 		nodeList.add(typelabel);
 		nodeList.add(keylabel);
-		nodeList.add(valuebox);
+		nodeList.add(valueNode);
 		nodeList.add(delCheck);
 		return nodeList;
 	}
 
-	protected HBox getAtrributeBox(String attrName, AttributeValue attrVal) {
+	protected Node getAtrributeBox(String attrName, AttributeValue attrVal) {
 		String attrStr = DynamoDbUtils.getAttrString(attrVal);
-		HBox hbox = new HBox();
 		TextField textField = new TextField(attrStr);
-		textField.setMinWidth(FILELD_WIDTH);
-		Control control = textField;
+		// textField.setMinWidth(FILELD_WIDTH);
 		if (attrVal.s() != null) {
 			textField.setId(STRFLD_ID_PREFIX + attrName);
 		} else if (attrVal.n() != null) {
@@ -87,8 +99,7 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 		} else {
 			return getAttrEditButton(attrName, attrStr);
 		}
-		hbox.getChildren().addAll(control);
-		return hbox;
+		return textField;
 	}
 
 	protected HBox getAttrEditButton(String attrName, String text) {
@@ -136,19 +147,16 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 			if (delCheck.isSelected()) {
 				continue;
 			}
-			HBox valuebox = (HBox) wkNodeList.get(2);
+			Node valueNode = wkNodeList.get(2);
 			Label keylabel = (Label) wkNodeList.get(1);
-			AttributeValue newAttr = getCurrentAttributeValue(valuebox);
+			AttributeValue newAttr = getCurrentAttributeValue(valueNode);
 			retMap.put(keylabel.getText(), newAttr);
 		}
 		return retMap;
 	}
 
-	protected AttributeValue getCurrentAttributeValue(HBox valuebox) {
-		Node valueNode = valuebox.getChildren().get(0);
-		if (valueNode instanceof RadioButton) {
-			return AttributeValue.builder().bool(getBooleanValue(valuebox)).build();
-		} else if (valueNode instanceof TextField) {
+	protected AttributeValue getCurrentAttributeValue(Node valueNode) {
+		if (valueNode instanceof TextField) {
 			TextField valTextField = (TextField) valueNode;
 			String id = valTextField.getId();
 			if (id.startsWith(STRFLD_ID_PREFIX)) {
@@ -161,9 +169,16 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 			}
 		} else if (valueNode instanceof Label) {
 			return AttributeValue.builder().nul(true).build();
-		} else {
-			Button button = (Button) valuebox.getChildren().get(0);
-			return getCurrentAttribute(button.getId());
+		} else if (valueNode instanceof HBox) {
+			HBox wkBox = (HBox) valueNode;
+			Node firstNode = wkBox.getChildren().get(0);
+			if (firstNode instanceof RadioButton) {
+				return AttributeValue.builder().bool(getBooleanValue(wkBox)).build();
+			} else {
+				Button button = (Button) firstNode;
+				return getCurrentAttribute(button.getId());
+			}
+
 		}
 		return null;
 	}

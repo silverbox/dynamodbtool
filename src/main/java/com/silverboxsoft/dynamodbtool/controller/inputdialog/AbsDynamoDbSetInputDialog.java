@@ -6,7 +6,6 @@ import java.util.List;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.layout.HBox;
 
 public abstract class AbsDynamoDbSetInputDialog<T> extends AbsDynamoDbInputDialog<List<T>> {
 
@@ -17,9 +16,9 @@ public abstract class AbsDynamoDbSetInputDialog<T> extends AbsDynamoDbInputDialo
 
 	abstract String getTypeString();
 
-	abstract HBox getAttrubuteBox(int recIndex, T attr);
+	abstract Node getAttrubuteBox(int recIndex, T attr);
 
-	abstract T getCurrentAttrubuteValue(HBox valuebox);
+	abstract T getCurrentAttrubuteValue(Node valuebox);
 
 	@Override
 	protected List<T> getCurrentDynamoDbRecord() {
@@ -31,7 +30,7 @@ public abstract class AbsDynamoDbSetInputDialog<T> extends AbsDynamoDbInputDialo
 			if (delCheck.isSelected()) {
 				continue;
 			}
-			HBox valuebox = (HBox) wkNodeList.get(0);
+			Node valuebox = wkNodeList.get(0);
 			retList.add(getCurrentAttrubuteValue(valuebox));
 		}
 		return retList;
@@ -52,14 +51,27 @@ public abstract class AbsDynamoDbSetInputDialog<T> extends AbsDynamoDbInputDialo
 		List<List<Node>> retList = new ArrayList<>();
 		for (int recIdx = 0; recIdx < getDynamoDbRecordOrg().size(); recIdx++) {
 			T attrVal = getDynamoDbRecordOrg().get(recIdx);
-			HBox valuebox = getAttrubuteBox(retList.size(), attrVal);
+			Node valueNode = getAttrubuteBox(retList.size(), attrVal);
 			CheckBox delCheck = new CheckBox();
 			delCheck.setId(DEL_ID_PREFIX + String.valueOf(recIdx));
 			List<Node> nodeList = new ArrayList<>();
-			nodeList.add(valuebox);
+			nodeList.add(valueNode);
 			nodeList.add(delCheck);
 			retList.add(nodeList);
 		}
 		return retList;
 	}
+
+	@Override
+	protected List<Integer> getHeaderWidthList() {
+		List<Integer> retList = new ArrayList<>();
+		retList.add(FILELD_WIDTH);
+		retList.add(DEL_COL_WIDTH);
+		return retList;
+	};
+
+	@Override
+	protected int getValueColIndex() {
+		return 0;
+	};
 }

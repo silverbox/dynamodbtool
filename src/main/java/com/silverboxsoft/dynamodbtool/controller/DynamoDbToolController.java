@@ -22,6 +22,7 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
@@ -166,6 +167,8 @@ public class DynamoDbToolController implements Initializable {
 		newTab.setText(tableName);
 		newTab.setContent(dbtable);
 		tabPaneTable.getTabs().add(newTab);
+		SingleSelectionModel<Tab> selectionModel = tabPaneTable.getSelectionModel();
+		selectionModel.select(newTab);
 	}
 
 	/*

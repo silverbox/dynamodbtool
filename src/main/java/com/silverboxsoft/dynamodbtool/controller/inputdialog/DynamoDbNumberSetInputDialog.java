@@ -5,9 +5,8 @@ import java.util.List;
 
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
-import javafx.scene.control.Control;
+import javafx.scene.Node;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 
 public class DynamoDbNumberSetInputDialog extends AbsDynamoDbSetInputDialog<BigDecimal> {
 
@@ -21,19 +20,15 @@ public class DynamoDbNumberSetInputDialog extends AbsDynamoDbSetInputDialog<BigD
 	};
 
 	@Override
-	protected HBox getAttrubuteBox(int recIndex, BigDecimal attr) {
-		HBox hbox = new HBox();
+	protected Node getAttrubuteBox(int recIndex, BigDecimal attr) {
 		TextField textField = new TextField();
-		textField.setMinWidth(FILELD_WIDTH);
 		textField.setText(DynamoDbUtils.getNumStr(attr));
-		Control control = textField;
-		hbox.getChildren().addAll(control);
-		return hbox;
+		return textField;
 	}
 
 	@Override
-	protected BigDecimal getCurrentAttrubuteValue(HBox valuebox) {
-		TextField valField = (TextField) valuebox.getChildren().get(0);
+	protected BigDecimal getCurrentAttrubuteValue(Node valueNode) {
+		TextField valField = (TextField) valueNode;
 		return DynamoDbUtils.getBigDecimal(valField.getText());
 	}
 }

@@ -4,9 +4,8 @@ import java.util.List;
 
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
-import javafx.scene.control.Control;
+import javafx.scene.Node;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 import software.amazon.awssdk.core.SdkBytes;
 
 public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkBytes> {
@@ -21,19 +20,15 @@ public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkB
 	};
 
 	@Override
-	protected HBox getAttrubuteBox(int recIndex, SdkBytes attr) {
-		HBox hbox = new HBox();
+	protected Node getAttrubuteBox(int recIndex, SdkBytes attr) {
 		TextField textField = new TextField();
-		textField.setMinWidth(FILELD_WIDTH);
 		textField.setText(DynamoDbUtils.getBase64StringFromSdkBytes(attr));
-		Control control = textField;
-		hbox.getChildren().addAll(control);
-		return hbox;
+		return textField;
 	}
 
 	@Override
-	protected SdkBytes getCurrentAttrubuteValue(HBox valuebox) {
-		TextField valField = (TextField) valuebox.getChildren().get(0);
+	protected SdkBytes getCurrentAttrubuteValue(Node valueNode) {
+		TextField valField = (TextField) valueNode;
 		return DynamoDbUtils.getSdkBytesFromBase64String(valField.getText());
 	}
 }

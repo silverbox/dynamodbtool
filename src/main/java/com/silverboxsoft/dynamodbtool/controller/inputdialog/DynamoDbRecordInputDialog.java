@@ -13,7 +13,6 @@ import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 import javafx.scene.Node;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
 import software.amazon.awssdk.services.dynamodb.model.TableDescription;
@@ -64,8 +63,7 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 	protected List<Node> getOneNodeList(String attrName, AttributeValue attrValue) {
 		List<Node> retList = super.getOneNodeList(attrName, attrValue);
 		if (keyColumnSet.contains(attrName)) {
-			HBox valuebox = (HBox) retList.get(2);
-			Node valNode = valuebox.getChildren().get(0);
+			Node valNode = retList.get(2);
 			if (valNode instanceof TextField) {
 				TextField textField = (TextField) valNode;
 				textField.setStyle("-fx-background-color: lightgray;");
