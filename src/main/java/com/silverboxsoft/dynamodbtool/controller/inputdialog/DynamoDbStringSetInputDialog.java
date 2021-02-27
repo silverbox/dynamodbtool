@@ -2,9 +2,8 @@ package com.silverboxsoft.dynamodbtool.controller.inputdialog;
 
 import java.util.List;
 
-import javafx.scene.control.Control;
+import javafx.scene.Node;
 import javafx.scene.control.TextField;
-import javafx.scene.layout.HBox;
 
 public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<String> {
 
@@ -18,19 +17,15 @@ public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<Stri
 	};
 
 	@Override
-	protected HBox getAttrubuteBox(int recIndex, String attr) {
-		HBox hbox = new HBox();
+	protected Node getAttrubuteBox(int recIndex, String attr) {
 		TextField textField = new TextField();
-		textField.setMinWidth(FILELD_WIDTH);
 		textField.setText(attr);
-		Control control = textField;
-		hbox.getChildren().addAll(control);
-		return hbox;
+		return textField;
 	}
 
 	@Override
-	protected String getCurrentAttrubuteValue(HBox valuebox) {
-		TextField valField = (TextField) valuebox.getChildren().get(0);
+	protected String getCurrentAttrubuteValue(Node valueNode) {
+		TextField valField = (TextField) valueNode;
 		return valField.getText();
 	};
 }
