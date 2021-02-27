@@ -10,7 +10,6 @@ import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 import javafx.scene.Node;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.Control;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
@@ -25,6 +24,20 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 	public DynamoDbListInputDialog(List<AttributeValue> dynamoDbRecord) {
 		super(dynamoDbRecord);
 	}
+
+	@Override
+	protected List<Integer> getHeaderWidthList() {
+		List<Integer> retList = new ArrayList<>();
+		retList.add(NAME_COL_WIDTH);
+		retList.add(FILELD_WIDTH);
+		retList.add(DEL_COL_WIDTH);
+		return retList;
+	};
+
+	@Override
+	protected int getValueColIndex() {
+		return 1;
+	};
 
 	@Override
 	protected List<Node> getHeaderLabelList() {
@@ -44,7 +57,7 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 		for (int recIdx = 0; recIdx < getDynamoDbRecordOrg().size(); recIdx++) {
 			AttributeValue attrVal = getDynamoDbRecordOrg().get(recIdx);
 			Label typelabel = getContentLabel(DynamoDbUtils.getAttrTypeString(attrVal));
-			HBox valuebox = getAtrributeBox(recIdx, attrVal);
+			Node valuebox = getAtrributeBox(recIdx, attrVal);
 			CheckBox delCheck = new CheckBox();
 			delCheck.setId(DEL_ID_PREFIX + String.valueOf(recIdx));
 			List<Node> nodeList = new ArrayList<>();
@@ -56,12 +69,10 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 		return retList;
 	}
 
-	protected HBox getAtrributeBox(int recIndex, AttributeValue attrVal) {
+	protected Node getAtrributeBox(int recIndex, AttributeValue attrVal) {
 		String attrStr = DynamoDbUtils.getAttrString(attrVal);
-		HBox hbox = new HBox();
 		TextField textField = new TextField(attrStr);
-		textField.setMinWidth(FILELD_WIDTH);
-		Control control = textField;
+		// textField.setMinWidth(FILELD_WIDTH);
 		if (attrVal.s() != null) {
 			textField.setId(STRFLD_ID_PREFIX + String.valueOf(recIndex));
 		} else if (attrVal.n() != null) {
@@ -75,11 +86,10 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 		} else {
 			return getAttrEditButton(recIndex, attrStr);
 		}
-		hbox.getChildren().addAll(control);
-		return hbox;
+		return textField;
 	}
 
-	protected HBox getAttrEditButton(int recIndex, String text) {
+	protected Node getAttrEditButton(int recIndex, String text) {
 		String idStr = String.valueOf(recIndex);
 		HBox hbox = new HBox(HGAP);
 		Label vallabel = getContentLabel(text);
@@ -125,17 +135,23 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 			if (delCheck.isSelected()) {
 				continue;
 			}
-			HBox valuebox = (HBox) wkNodeList.get(1);
-			AttributeValue newAttr = getCurrentAttributeValue(valuebox);
+			Node valueNode = (Node) wkNodeList.get(1);
+			AttributeValue newAttr = getCurrentAttributeValue(valueNode);
 			retList.add(newAttr);
 		}
 		return retList;
 	}
 
-	protected AttributeValue getCurrentAttributeValue(HBox valuebox) {
-		Node valueNode = valuebox.getChildren().get(0);
-		if (valueNode instanceof RadioButton) {
-			return AttributeValue.builder().bool(getBooleanValue(valuebox)).build();
+	protected AttributeValue getCurrentAttributeValue(Node valueNode) {
+		if (valueNode instanceof HBox) {
+			HBox wkBox = (HBox) valueNode;
+			Node wkNode = wkBox.getChildren().get(0);
+			if (wkNode instanceof RadioButton) {
+				return AttributeValue.builder().bool(getBooleanValue(wkBox)).build();
+			} else {
+				Button button = (Button) wkNode;
+				return getCurrentAttribute(button.getId());
+			}
 		} else if (valueNode instanceof TextField) {
 			TextField valTextField = (TextField) valueNode;
 			String id = valTextField.getId();
@@ -149,9 +165,6 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 			}
 		} else if (valueNode instanceof Label) {
 			return AttributeValue.builder().nul(true).build();
-		} else {
-			Button button = (Button) valuebox.getChildren().get(0);
-			return getCurrentAttribute(button.getId());
 		}
 		return null;
 	}
