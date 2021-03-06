@@ -19,8 +19,13 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<String, AttributeValue>> {
 
-	protected List<String> attrNameList = null;
+	private static final String ADD_ATTR_NAME = "";
+
+	private TextField addAttrNameTextField;
+	private Node addAttrValueNode;
 	private Map<String, AttributeValue> updAttributeMap = new HashMap<>();
+
+	protected List<String> attrNameList = null;
 
 	public DynamoDbMapInputDialog(Map<String, AttributeValue> dynamoDbRecord) {
 		super(dynamoDbRecord);
@@ -56,24 +61,22 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	}
 
 	@Override
-	protected List<List<Node>> getBodyAttribueNodeList() {
-		if (attrNameList == null) {
-			attrNameList = new ArrayList<>();
-		}
+	protected List<List<Node>> getBodyAttributeNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
 		for (Map.Entry<String, AttributeValue> entry : getDynamoDbRecordOrg().entrySet()) {
-			retList.add(getOneNodeList(entry.getKey(), entry.getValue()));
-			attrNameList.add(entry.getKey());
+			retList.add(getOneBodyAttributeNodeList(entry.getKey(), entry.getValue()));
+			getAttrNameList().add(entry.getKey());
 		}
 		return retList;
 	}
 
-	protected List<Node> getOneNodeList(String attrName, AttributeValue attrValue) {
+	protected List<Node> getOneBodyAttributeNodeList(String attrName, AttributeValue attrValue) {
 		Label typelabel = getContentLabel(DynamoDbUtils.getAttrTypeString(attrValue));
 		Label keylabel = getContentLabel(attrName);
 		Node valueNode = getAtrributeBox(attrName, attrValue);
 		CheckBox delCheck = new CheckBox();
 		delCheck.setId(DEL_ID_PREFIX + attrName);
+
 		List<Node> nodeList = new ArrayList<>();
 		nodeList.add(typelabel);
 		nodeList.add(keylabel);
@@ -108,7 +111,7 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 		vallabel.setId(VALLBL_ID_PREFIX + attrName);
 		Button button = new Button();
 		button.setText(BTN_TITLE);
-		button.setId(BTN_ID_PREFIX + attrName);
+		button.setId(EDTBTN_ID_PREFIX + attrName);
 		button.setOnAction((event) -> {
 			Button wkBtn = (Button) event.getSource();
 			actOpenEditDialog(wkBtn.getId());
@@ -119,18 +122,27 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 
 	@Override
 	protected void callBackSetNewAttribute(String btnId, AttributeValue attrVal) {
-		String attrName = btnId.substring(BTN_ID_PREFIX.length());
-		updAttributeMap.put(attrName, attrVal);
-		Node valLabelNode = getDialogPane().lookup(String.format("#%s", VALLBL_ID_PREFIX + attrName));
-		if (valLabelNode != null && valLabelNode instanceof Label) {
-			Label valLabel = (Label) valLabelNode;
-			valLabel.setText(DynamoDbUtils.getAttrString(attrVal));
+		String attrName = btnId.substring(EDTBTN_ID_PREFIX.length());
+		if (attrName.equals(ADD_ATTR_NAME)) {
+			attrName = addAttrNameTextField.getText();
+			List<Node> nodelList = getOneBodyAttributeNodeList(attrName, attrVal);
+			addAttributeNodeList(nodelList);
+		} else {
+			Node valLabelNode = getDialogPane().lookup(String.format("#%s", VALLBL_ID_PREFIX + attrName));
+			if (valLabelNode != null && valLabelNode instanceof Label) {
+				Label valLabel = (Label) valLabelNode;
+				valLabel.setText(DynamoDbUtils.getAttrString(attrVal));
+			}
 		}
+		updAttributeMap.put(attrName, attrVal);
 	}
 
 	@Override
 	protected AttributeValue getCurrentAttribute(String btnId) {
-		String attrName = btnId.substring(BTN_ID_PREFIX.length());
+		String attrName = btnId.substring(EDTBTN_ID_PREFIX.length());
+		if (attrName.equals(ADD_ATTR_NAME)) {
+			return getInitAttributeValue();
+		}
 		if (updAttributeMap.containsKey(attrName)) {
 			return updAttributeMap.get(attrName);
 		} else {
@@ -182,4 +194,46 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 		}
 		return null;
 	}
+
+	@Override
+	protected List<Node> getFooterNodeList() {
+
+		List<Node> retList = new ArrayList<>();
+		addAttrValueNode = getAtrributeBox(ADD_ATTR_NAME, getSelectedAddType().getInitValue());
+		retList.add(getTypeComboBox());
+		retList.add(getAddAttrNameTextField());
+		retList.add(addAttrValueNode);
+		retList.add(getAddButton());
+		return retList;
+	}
+
+	@Override
+	void actAddScalarAttribute() {
+		String attrName = getAddAttrNameTextField().getText();
+		AttributeValue attrVal = getCurrentAttributeValue(addAttrValueNode);
+		updAttributeMap.put(attrName, attrVal);
+		List<Node> nodelList = getOneBodyAttributeNodeList(attrName, attrVal);
+		addAttributeNodeList(nodelList);
+		getAttrNameList().add(attrName);
+	}
+
+	@Override
+	void onAddTypeComboSelChanged(String oldValue, String newValue) {
+		updateFooter();
+	}
+
+	protected List<String> getAttrNameList() {
+		if (attrNameList == null) {
+			attrNameList = new ArrayList<>();
+		}
+		return attrNameList;
+	}
+
+	protected TextField getAddAttrNameTextField() {
+		if (addAttrNameTextField == null) {
+			addAttrNameTextField = new TextField(ADD_ATTR_NAME);
+		}
+		return addAttrNameTextField;
+	}
+
 }

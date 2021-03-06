@@ -19,7 +19,11 @@ import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List<AttributeValue>> {
 
+	private static final int ADD_INDEX = -1;
+
+	private Node addAttrValueNode;
 	private Map<String, AttributeValue> updAttributeMap = new HashMap<>();
+	private Map<String, AttributeValue> addAttributeMap = new HashMap<>();
 
 	public DynamoDbListInputDialog(List<AttributeValue> dynamoDbRecord) {
 		super(dynamoDbRecord);
@@ -52,21 +56,27 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 	}
 
 	@Override
-	protected List<List<Node>> getBodyAttribueNodeList() {
+	protected List<List<Node>> getBodyAttributeNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
 		for (int recIdx = 0; recIdx < getDynamoDbRecordOrg().size(); recIdx++) {
 			AttributeValue attrVal = getDynamoDbRecordOrg().get(recIdx);
-			Label typelabel = getContentLabel(DynamoDbUtils.getAttrTypeString(attrVal));
-			Node valuebox = getAtrributeBox(recIdx, attrVal);
-			CheckBox delCheck = new CheckBox();
-			delCheck.setId(DEL_ID_PREFIX + String.valueOf(recIdx));
-			List<Node> nodeList = new ArrayList<>();
-			nodeList.add(typelabel);
-			nodeList.add(valuebox);
-			nodeList.add(delCheck);
-			retList.add(nodeList);
+			retList.add(getOneBodyAttributeNodeList(recIdx, attrVal));
 		}
 		return retList;
+	}
+
+	private List<Node> getOneBodyAttributeNodeList(int recIdx, AttributeValue attrVal) {
+		Label typelabel = getContentLabel(DynamoDbUtils.getAttrTypeString(attrVal));
+		Node valuebox = getAtrributeBox(recIdx, attrVal);
+		CheckBox delCheck = new CheckBox();
+		delCheck.setId(DEL_ID_PREFIX + String.valueOf(recIdx));
+
+		List<Node> nodeList = new ArrayList<>();
+		nodeList.add(typelabel);
+		nodeList.add(valuebox);
+		nodeList.add(delCheck);
+
+		return nodeList;
 	}
 
 	protected Node getAtrributeBox(int recIndex, AttributeValue attrVal) {
@@ -96,7 +106,7 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 		vallabel.setId(VALLBL_ID_PREFIX + idStr);
 		Button button = new Button();
 		button.setText(BTN_TITLE);
-		button.setId(BTN_ID_PREFIX + idStr);
+		button.setId(EDTBTN_ID_PREFIX + idStr);
 		button.setOnAction((event) -> {
 			Button wkBtn = (Button) event.getSource();
 			actOpenEditDialog(wkBtn.getId());
@@ -107,9 +117,14 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 
 	@Override
 	protected AttributeValue getCurrentAttribute(String btnId) {
-		String recIndexStr = btnId.substring(BTN_ID_PREFIX.length());
+		String recIndexStr = btnId.substring(EDTBTN_ID_PREFIX.length());
+		if (recIndexStr.equals(String.valueOf(ADD_INDEX))) {
+			return getInitAttributeValue();
+		}
 		if (updAttributeMap.containsKey(recIndexStr)) {
 			return updAttributeMap.get(recIndexStr);
+		} else if (addAttributeMap.containsKey(recIndexStr)) {
+			return addAttributeMap.get(recIndexStr);
 		} else {
 			return getDynamoDbRecordOrg().get(Integer.valueOf(recIndexStr));
 		}
@@ -117,13 +132,21 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 
 	@Override
 	protected void callBackSetNewAttribute(String btnId, AttributeValue attrVal) {
-		String idStr = btnId.substring(BTN_ID_PREFIX.length());
-		updAttributeMap.put(idStr, attrVal);
-		Node valLabelNode = getDialogPane().lookup(String.format("#%s", VALLBL_ID_PREFIX + idStr));
-		if (valLabelNode != null && valLabelNode instanceof Label) {
-			Label valLabel = (Label) valLabelNode;
-			valLabel.setText(DynamoDbUtils.getAttrString(attrVal));
+		String idStr = btnId.substring(EDTBTN_ID_PREFIX.length());
+		if (idStr.equals(String.valueOf(ADD_INDEX))) {
+			int recIdx = getNewRecIdx();
+			List<Node> nodelList = getOneBodyAttributeNodeList(recIdx, attrVal);
+			addAttributeNodeList(nodelList);
+			String newIdStr = String.valueOf(recIdx);
+			getAddAttributeMap().put(newIdStr, attrVal);
+		} else {
+			Node valLabelNode = getDialogPane().lookup(String.format("#%s", VALLBL_ID_PREFIX + idStr));
+			if (valLabelNode != null && valLabelNode instanceof Label) {
+				Label valLabel = (Label) valLabelNode;
+				valLabel.setText(DynamoDbUtils.getAttrString(attrVal));
+			}
 		}
+		updAttributeMap.put(idStr, attrVal);
 	}
 
 	@Override
@@ -140,6 +163,10 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 			retList.add(newAttr);
 		}
 		return retList;
+	}
+
+	protected int getNewRecIdx() {
+		return getDynamoDbRecordOrg().size() + getAddAttributeMap().size();
 	}
 
 	protected AttributeValue getCurrentAttributeValue(Node valueNode) {
@@ -167,5 +194,37 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 			return AttributeValue.builder().nul(true).build();
 		}
 		return null;
+	}
+
+	@Override
+	void actAddScalarAttribute() {
+		int recIdx = getNewRecIdx();
+		String newIdStr = String.valueOf(recIdx);
+		AttributeValue attrVal = getCurrentAttributeValue(addAttrValueNode);
+		getAddAttributeMap().put(newIdStr, attrVal);
+		List<Node> nodelList = getOneBodyAttributeNodeList(recIdx, attrVal);
+		addAttributeNodeList(nodelList);
+	}
+
+	@Override
+	void onAddTypeComboSelChanged(String oldValue, String newValue) {
+		updateFooter();
+	}
+
+	@Override
+	List<Node> getFooterNodeList() {
+		List<Node> retList = new ArrayList<>();
+		addAttrValueNode = getAtrributeBox(ADD_INDEX, getSelectedAddType().getInitValue());
+		retList.add(getTypeComboBox());
+		retList.add(addAttrValueNode);
+		retList.add(getAddButton());
+		return retList;
+	}
+
+	protected Map<String, AttributeValue> getAddAttributeMap() {
+		if (addAttributeMap == null) {
+			addAttributeMap = new HashMap<>();
+		}
+		return addAttributeMap;
 	}
 }

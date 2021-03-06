@@ -27,5 +27,10 @@ public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<Stri
 	protected String getCurrentAttrubuteValue(Node valueNode) {
 		TextField valField = (TextField) valueNode;
 		return valField.getText();
-	};
+	}
+
+	@Override
+	String getInitAttribute() {
+		return "";
+	}
 }

@@ -31,4 +31,10 @@ public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkB
 		TextField valField = (TextField) valueNode;
 		return DynamoDbUtils.getSdkBytesFromBase64String(valField.getText());
 	}
+
+	@Override
+	SdkBytes getInitAttribute() {
+		return SdkBytes.fromByteArray(new byte[0]);
+	}
+
 }

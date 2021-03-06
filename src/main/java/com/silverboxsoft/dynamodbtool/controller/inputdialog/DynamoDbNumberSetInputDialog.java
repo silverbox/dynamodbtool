@@ -31,4 +31,9 @@ public class DynamoDbNumberSetInputDialog extends AbsDynamoDbSetInputDialog<BigD
 		TextField valField = (TextField) valueNode;
 		return DynamoDbUtils.getBigDecimal(valField.getText());
 	}
+
+	@Override
+	BigDecimal getInitAttribute() {
+		return new BigDecimal(0);
+	}
 }

@@ -64,25 +64,25 @@ public class DynamoDbUtils {
 		if (attrVal == null) {
 			return NO_VALSTR;
 		} else if (attrVal.s() != null) {
-			return "STRING";
+			return DynamoDbColumnType.STRING.getDispStr();
 		} else if (attrVal.n() != null) {
-			return "NUMBER";
+			return DynamoDbColumnType.NUMBER.getDispStr();
 		} else if (attrVal.b() != null) {
-			return "BINARY";
+			return DynamoDbColumnType.BINARY.getDispStr();
 		} else if (attrVal.bool() != null) {
-			return "BOOL";
+			return DynamoDbColumnType.BOOLEAN.getDispStr();
 		} else if (attrVal.hasSs()) {
-			return "Set of STRING";
+			return DynamoDbColumnType.STRING_SET.getDispStr();
 		} else if (attrVal.hasNs()) {
-			return "Set of NUMBER";
+			return DynamoDbColumnType.NUMBER_SET.getDispStr();
 		} else if (attrVal.hasBs()) {
-			return "Set of BINARY";
+			return DynamoDbColumnType.BINARY_SET.getDispStr();
 		} else if (attrVal.hasM()) {
-			return "MAP";
+			return DynamoDbColumnType.MAP.getDispStr();
 		} else if (attrVal.hasL()) {
-			return "LIST";
+			return DynamoDbColumnType.LIST.getDispStr();
 		} else if (isNullAttr(attrVal)) {
-			return "NULL";
+			return DynamoDbColumnType.NULL.getDispStr();
 		}
 		return "UNKNOWN";
 	}
