@@ -19,18 +19,19 @@ import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 	private List<DynamoDbColumn> tblStructColumnList = new ArrayList<>();
-	private Set<String> keyColumnSet = new HashSet<>();
+	private Set<String> keyColumnSet;
 
 	public DynamoDbRecordInputDialog(TableDescription tableInfo, Map<String, AttributeValue> dynamoDbRecord) {
-		super(dynamoDbRecord);
+		super(dynamoDbRecord, "");
+		this.setTitle(DynamoDbUtils.getKeyValueStr(tableInfo, dynamoDbRecord));
 		tblStructColumnList = DynamoDbUtils.getSortedSchemeAttrNameList(tableInfo);
 		List<KeySchemaElement> keyInfos = tableInfo.keySchema();
-		keyInfos.stream().forEach(elem -> keyColumnSet.add(elem.attributeName()));
+		keyInfos.stream().forEach(elem -> getKeyColumnSet().add(elem.attributeName()));
 		this.initialize(); // TODO work around
 	}
 
 	@Override
-	protected List<List<Node>> getBodyAttribueNodeList() {
+	protected List<List<Node>> getBodyAttributeNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
 		if (tblStructColumnList == null) {
 			return retList;
@@ -42,27 +43,28 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 		// add key info first
 		for (int colIdx = 0; colIdx < tblStructColumnList.size(); colIdx++) {
 			String attrName = tblStructColumnList.get(colIdx).getColumnName();
-			retList.add(getOneNodeList(attrName, getDynamoDbRecordOrg().get(attrName)));
+			retList.add(getOneBodyAttributeNodeList(attrName, getDynamoDbRecordOrg().get(attrName)));
 			attrNameList.add(attrName);
 		}
 
 		// pick up the data which attribute name is come yet.
-		Set<String> unsetKeyNameSet = getDynamoDbRecordOrg().keySet();
+		// Set<String> unsetKeyNameSet = getDynamoDbRecordOrg().keySet();
+		List<String> allAttrNameList = DynamoDbUtils.getSortedAttrNameList(getDynamoDbRecordOrg());
 		Set<String> keyNameSet = attrNameList.stream().collect(Collectors.toSet());
-		for (String newAttrName : unsetKeyNameSet) {
+		for (String newAttrName : allAttrNameList) {
 			if (keyNameSet.contains(newAttrName)) {
 				continue;
 			}
-			retList.add(getOneNodeList(newAttrName, getDynamoDbRecordOrg().get(newAttrName)));
+			retList.add(getOneBodyAttributeNodeList(newAttrName, getDynamoDbRecordOrg().get(newAttrName)));
 			attrNameList.add(newAttrName);
 		}
 
 		return retList;
 	}
 
-	protected List<Node> getOneNodeList(String attrName, AttributeValue attrValue) {
-		List<Node> retList = super.getOneNodeList(attrName, attrValue);
-		if (keyColumnSet.contains(attrName)) {
+	protected List<Node> getOneBodyAttributeNodeList(String attrName, AttributeValue attrValue) {
+		List<Node> retList = super.getOneBodyAttributeNodeList(attrName, attrValue);
+		if (getKeyColumnSet().contains(attrName)) {
 			Node valNode = retList.get(2);
 			if (valNode instanceof TextField) {
 				TextField textField = (TextField) valNode;
@@ -73,5 +75,12 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 			delbox.setDisable(true);
 		}
 		return retList;
+	}
+
+	private Set<String> getKeyColumnSet() {
+		if (keyColumnSet == null) {
+			keyColumnSet = new HashSet<>();
+		}
+		return keyColumnSet;
 	}
 }

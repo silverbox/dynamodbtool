@@ -8,12 +8,14 @@ import javafx.fxml.FXMLLoader;
 import javafx.geometry.Pos;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.ScrollPane.ScrollBarPolicy;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.AnchorPane;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
@@ -95,7 +97,7 @@ public class App extends Application {
 		grid.add(hbox2, 1, 1);
 		grid.add(delCheck2, 2, 1);
 
-		for (int i = 0; i < 30; i++) {
+		for (int i = 0; i < 100; i++) {
 			Label wklabel = getContentLabel(String.format("No. %1d row", i));
 			grid.add(wklabel, 0, i + 2);
 		}
@@ -109,10 +111,6 @@ public class App extends Application {
 		scrollPane = new ScrollPane();
 		scrollPane.setContent(anchorPane);
 		scrollPane.setStyle("-fx-background-color:red");
-
-		Rectangle2D screenSize2d = Screen.getPrimary().getVisualBounds();
-		scrollPane.setMaxWidth(screenSize2d.getWidth() / 2);
-		scrollPane.setMaxHeight(screenSize2d.getHeight() / 2);
 
 		ColumnConstraints colContraint0 = new ColumnConstraints();
 		ColumnConstraints colContraint1 = new ColumnConstraints();
@@ -130,9 +128,20 @@ public class App extends Application {
 		};
 		scrollPane.widthProperty().addListener(stageSizeListener);
 
-		Scene scene = new Scene(scrollPane);
+		BorderPane borderPane = new BorderPane();
+		borderPane.setCenter(scrollPane);
+		borderPane.setTop(new Label("test"));
+		borderPane.setBottom(new Button("add"));
+
+		Scene scene = new Scene(borderPane);
 		stage.setTitle("Test dialog");
 		stage.setScene(scene);
+
+		Rectangle2D screenSize2d = Screen.getPrimary().getVisualBounds();
+		stage.setMinHeight(300);
+		stage.setMinWidth(500);
+		stage.setMaxHeight(screenSize2d.getHeight());
+		stage.setMaxWidth(screenSize2d.getWidth());
 	}
 
 	// same as DialogPane.createContentLabel
@@ -145,4 +154,19 @@ public class App extends Application {
 		label.setText(text);
 		return label;
 	}
+
+	// private void setWinsize(ScrollPane pane, Bounds newValue) {
+	// double dialogWidth = newValue.getWidth(); // thisDialog.getPrefWidth();
+	// double dialogHeight = newValue.getHeight(); // thisDialog.getPrefHeight();
+	// // scrollPane.setMaxWidth();
+	// // scrollPane.setMaxHeight();
+	// Rectangle2D screenSize2d = Screen.getPrimary().getVisualBounds();
+	// double width = screenSize2d.getWidth();
+	// double height = screenSize2d.getHeight();
+	// double newWidth = dialogWidth > width ? width : dialogWidth;
+	// double newHeight = dialogHeight > height ? height : dialogHeight;
+	// System.out.println(String.format("width=%1$f, height=%2$f, win-wid=%3$f, win-hei=%4$f",
+	// dialogWidth, dialogHeight, width, height));
+	// pane.setPrefSize(newWidth, newHeight);
+	// }
 }

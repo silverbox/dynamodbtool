@@ -10,8 +10,8 @@ import software.amazon.awssdk.core.SdkBytes;
 
 public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkBytes> {
 
-	public DynamoDbBinarySetInputDialog(List<SdkBytes> dynamoDbRecord) {
-		super(dynamoDbRecord);
+	public DynamoDbBinarySetInputDialog(List<SdkBytes> dynamoDbRecord, String dialogTitle) {
+		super(dynamoDbRecord, dialogTitle);
 	}
 
 	@Override
@@ -30,5 +30,15 @@ public class DynamoDbBinarySetInputDialog extends AbsDynamoDbSetInputDialog<SdkB
 	protected SdkBytes getCurrentAttrubuteValue(Node valueNode) {
 		TextField valField = (TextField) valueNode;
 		return DynamoDbUtils.getSdkBytesFromBase64String(valField.getText());
+	}
+
+	@Override
+	protected SdkBytes getInitAttribute() {
+		return SdkBytes.fromByteArray(new byte[0]);
+	}
+
+	@Override
+	protected boolean isSameValue(SdkBytes valA, SdkBytes valB) {
+		return valA.equals(valB);
 	}
 }

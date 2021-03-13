@@ -8,22 +8,35 @@ import java.util.Map;
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
 import javafx.scene.Node;
+import javafx.scene.control.Alert;
+import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
-import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
+import software.amazon.awssdk.utils.StringUtils;
 
 public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<String, AttributeValue>> {
 
-	protected List<String> attrNameList = null;
+	private static final String ADD_ATTR_NAME = "";
+
+	private static final int COL_IDX_NAME = 1;
+	private static final int COL_IDX_FIELD = 2;
+	private static final int COL_IDX_DEL = 3;
+
+	private static final String VALIDATION_MSG_NO_ATTR_NAME = "Please input attribute name.";
+	private static final String VALIDATION_MSG_DUP_ATTR_NAME = "Duplicated attribute name. please change the name.";
+
+	private TextField addAttrNameTextField;
+	private Node addAttrValueNode;
 	private Map<String, AttributeValue> updAttributeMap = new HashMap<>();
 
-	public DynamoDbMapInputDialog(Map<String, AttributeValue> dynamoDbRecord) {
-		super(dynamoDbRecord);
+	protected List<String> attrNameList = null;
+
+	public DynamoDbMapInputDialog(Map<String, AttributeValue> dynamoDbRecord, String dialogTitle) {
+		super(dynamoDbRecord, dialogTitle);
 	}
 
 	@Override
@@ -34,11 +47,6 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 		retList.add(FILELD_WIDTH);
 		retList.add(DEL_COL_WIDTH);
 		return retList;
-	};
-
-	@Override
-	protected int getValueColIndex() {
-		return 2;
 	};
 
 	@Override
@@ -56,28 +64,144 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	}
 
 	@Override
-	protected List<List<Node>> getBodyAttribueNodeList() {
-		if (attrNameList == null) {
-			attrNameList = new ArrayList<>();
-		}
+	protected List<List<Node>> getBodyAttributeNodeList() {
 		List<List<Node>> retList = new ArrayList<>();
-		for (Map.Entry<String, AttributeValue> entry : getDynamoDbRecordOrg().entrySet()) {
-			retList.add(getOneNodeList(entry.getKey(), entry.getValue()));
-			attrNameList.add(entry.getKey());
+		List<String> attrNameList = DynamoDbUtils.getSortedAttrNameList(getDynamoDbRecordOrg());
+		for (String attrName : attrNameList) {
+			retList.add(getOneBodyAttributeNodeList(attrName, getDynamoDbRecordOrg().get(attrName)));
+			getAttrNameList().add(attrName);
 		}
 		return retList;
 	}
 
-	protected List<Node> getOneNodeList(String attrName, AttributeValue attrValue) {
+	@Override
+	protected List<Node> getFooterNodeList() {
+
+		List<Node> retList = new ArrayList<>();
+		addAttrValueNode = getAtrributeBox(ADD_ATTR_NAME, getSelectedAddType().getInitValue());
+		retList.add(getTypeComboBox());
+		retList.add(getAddAttrNameTextField());
+		retList.add(addAttrValueNode);
+		retList.add(getAddButton());
+		return retList;
+	}
+
+	@Override
+	protected int getValueColIndex() {
+		return 2;
+	};
+
+	@Override
+	protected Map<String, AttributeValue> getEditedDynamoDbRecord() {
+		Map<String, AttributeValue> retMap = new HashMap<>();
+		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
+		for (List<Node> wkNodeList : currentBodyNodeList) {
+			CheckBox delCheck = (CheckBox) wkNodeList.get(COL_IDX_DEL);
+			if (delCheck.isSelected()) {
+				continue;
+			}
+			Node valueNode = wkNodeList.get(COL_IDX_FIELD);
+			Label keylabel = (Label) wkNodeList.get(COL_IDX_NAME);
+			AttributeValue newAttr = getAttributeFromNode(valueNode);
+			retMap.put(keylabel.getText(), newAttr);
+		}
+		return retMap;
+	}
+
+	@Override
+	void actAddNewAttribute() {
+		String attrName = getAddAttrNameTextField().getText();
+		AttributeValue attrVal = getAttributeFromNode(addAttrValueNode);
+		if (!addValidationCheck(attrName, attrVal)) {
+			return;
+		}
+		updAttributeMap.put(attrName, attrVal);
+		List<Node> nodelList = getOneBodyAttributeNodeList(attrName, attrVal);
+		addAttributeNodeList(nodelList);
+		getAttrNameList().add(attrName);
+	}
+
+	@Override
+	boolean isFinalValidationOk() {
+		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
+		for (List<Node> wkNodeList : currentBodyNodeList) {
+			CheckBox delCheck = (CheckBox) wkNodeList.get(COL_IDX_DEL);
+			if (delCheck.isSelected()) {
+				continue;
+			}
+			Node valueNode = wkNodeList.get(COL_IDX_FIELD);
+			if (!checkValueNode(valueNode)) {
+				Alert alert = new Alert(AlertType.ERROR, VALIDATION_MSG_INVALID_VALUE);
+				alert.showAndWait();
+				valueNode.requestFocus();
+				return false;
+			}
+		}
+		return true;
+	}
+
+	/*
+	 * 
+	 */
+
+	@Override
+	protected AttributeValue getAttributeFromEditButtonId(String btnId) {
+		String attrName = btnId.substring(EDTBTN_ID_PREFIX.length());
+		if (attrName.equals(ADD_ATTR_NAME)) {
+			return tempAddAttrValue;
+		}
+		if (updAttributeMap.containsKey(attrName)) {
+			return updAttributeMap.get(attrName);
+		} else {
+			return getDynamoDbRecordOrg().get(attrName);
+		}
+	}
+
+	@Override
+	String getTitleAppendStr(String btnId) {
+		return btnId.substring(EDTBTN_ID_PREFIX.length());
+	}
+
+	@Override
+	protected void callBackSetNewAttribute(String btnId, AttributeValue attrVal) {
+		String attrName = btnId.substring(EDTBTN_ID_PREFIX.length());
+		if (attrName.equals(ADD_ATTR_NAME)) {
+			tempAddAttrValue = attrVal;
+		} else {
+			Node valLabelNode = getDialogPane().lookup(String.format("#%s", VALLBL_ID_PREFIX + attrName));
+			if (valLabelNode != null && valLabelNode instanceof Label) {
+				Label valLabel = (Label) valLabelNode;
+				valLabel.setText(DynamoDbUtils.getAttrString(attrVal));
+			}
+		}
+		updAttributeMap.put(attrName, attrVal);
+	}
+
+	@Override
+	protected String getAddAttrEditButtonId() {
+		return EDTBTN_ID_PREFIX + ADD_ATTR_NAME;
+	}
+
+	@Override
+	protected void onAddTypeComboSelChanged(String oldValue, String newValue) {
+		tempAddAttrValue = null;
+		updateFooter();
+	}
+
+	/*
+	 * 
+	 */
+	protected List<Node> getOneBodyAttributeNodeList(String attrName, AttributeValue attrValue) {
 		Label typelabel = getContentLabel(DynamoDbUtils.getAttrTypeString(attrValue));
 		Label keylabel = getContentLabel(attrName);
 		Node valueNode = getAtrributeBox(attrName, attrValue);
 		CheckBox delCheck = new CheckBox();
 		delCheck.setId(DEL_ID_PREFIX + attrName);
+
 		List<Node> nodeList = new ArrayList<>();
-		nodeList.add(typelabel);
-		nodeList.add(keylabel);
-		nodeList.add(valueNode);
+		nodeList.add(addUnderlineStyleToNode(typelabel));
+		nodeList.add(addUnderlineStyleToNode(keylabel));
+		nodeList.add(addUnderlineStyleToNode(valueNode));
 		nodeList.add(delCheck);
 		return nodeList;
 	}
@@ -85,7 +209,6 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	protected Node getAtrributeBox(String attrName, AttributeValue attrVal) {
 		String attrStr = DynamoDbUtils.getAttrString(attrVal);
 		TextField textField = new TextField(attrStr);
-		// textField.setMinWidth(FILELD_WIDTH);
 		if (attrVal.s() != null) {
 			textField.setId(STRFLD_ID_PREFIX + attrName);
 		} else if (attrVal.n() != null) {
@@ -108,7 +231,7 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 		vallabel.setId(VALLBL_ID_PREFIX + attrName);
 		Button button = new Button();
 		button.setText(BTN_TITLE);
-		button.setId(BTN_ID_PREFIX + attrName);
+		button.setId(EDTBTN_ID_PREFIX + attrName);
 		button.setOnAction((event) -> {
 			Button wkBtn = (Button) event.getSource();
 			actOpenEditDialog(wkBtn.getId());
@@ -117,69 +240,46 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 		return hbox;
 	}
 
-	@Override
-	protected void callBackSetNewAttribute(String btnId, AttributeValue attrVal) {
-		String attrName = btnId.substring(BTN_ID_PREFIX.length());
-		updAttributeMap.put(attrName, attrVal);
-		Node valLabelNode = getDialogPane().lookup(String.format("#%s", VALLBL_ID_PREFIX + attrName));
-		if (valLabelNode != null && valLabelNode instanceof Label) {
-			Label valLabel = (Label) valLabelNode;
-			valLabel.setText(DynamoDbUtils.getAttrString(attrVal));
-		}
-	}
+	/*
+	 * 
+	 */
 
-	@Override
-	protected AttributeValue getCurrentAttribute(String btnId) {
-		String attrName = btnId.substring(BTN_ID_PREFIX.length());
+	protected boolean addValidationCheck(String attrName, AttributeValue attrVal) {
+		if (StringUtils.isEmpty(attrName)) {
+			Alert alert = new Alert(AlertType.ERROR, VALIDATION_MSG_NO_ATTR_NAME);
+			alert.showAndWait();
+			getAddAttrNameTextField().requestFocus();
+			return false;
+		}
 		if (updAttributeMap.containsKey(attrName)) {
-			return updAttributeMap.get(attrName);
-		} else {
-			return getDynamoDbRecordOrg().get(attrName);
+			Alert alert = new Alert(AlertType.ERROR, VALIDATION_MSG_DUP_ATTR_NAME);
+			alert.showAndWait();
+			getAddAttrNameTextField().requestFocus();
+			return false;
 		}
+		if (attrVal == null) {
+			Alert alert = new Alert(AlertType.ERROR, VALIDATION_MSG_NO_ATTR_VALUE);
+			alert.showAndWait();
+			getAddButton().requestFocus();
+			return false;
+		}
+		return true;
 	}
 
-	@Override
-	protected Map<String, AttributeValue> getCurrentDynamoDbRecord() {
-		Map<String, AttributeValue> retMap = new HashMap<>();
-		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
-		for (List<Node> wkNodeList : currentBodyNodeList) {
-			CheckBox delCheck = (CheckBox) wkNodeList.get(3);
-			if (delCheck.isSelected()) {
-				continue;
-			}
-			Node valueNode = wkNodeList.get(2);
-			Label keylabel = (Label) wkNodeList.get(1);
-			AttributeValue newAttr = getCurrentAttributeValue(valueNode);
-			retMap.put(keylabel.getText(), newAttr);
+	/*
+	 * accessor
+	 */
+	protected List<String> getAttrNameList() {
+		if (attrNameList == null) {
+			attrNameList = new ArrayList<>();
 		}
-		return retMap;
+		return attrNameList;
 	}
 
-	protected AttributeValue getCurrentAttributeValue(Node valueNode) {
-		if (valueNode instanceof TextField) {
-			TextField valTextField = (TextField) valueNode;
-			String id = valTextField.getId();
-			if (id.startsWith(STRFLD_ID_PREFIX)) {
-				return AttributeValue.builder().s(valTextField.getText()).build();
-			} else if (id.startsWith(NUMFLD_ID_PREFIX)) {
-				return AttributeValue.builder().n(valTextField.getText()).build();
-			} else if (id.startsWith(BINFLD_ID_PREFIX)) {
-				SdkBytes sdkBytes = DynamoDbUtils.getSdkBytesFromBase64String(valTextField.getText());
-				return AttributeValue.builder().b(sdkBytes).build();
-			}
-		} else if (valueNode instanceof Label) {
-			return AttributeValue.builder().nul(true).build();
-		} else if (valueNode instanceof HBox) {
-			HBox wkBox = (HBox) valueNode;
-			Node firstNode = wkBox.getChildren().get(0);
-			if (firstNode instanceof RadioButton) {
-				return AttributeValue.builder().bool(getBooleanValue(wkBox)).build();
-			} else {
-				Button button = (Button) firstNode;
-				return getCurrentAttribute(button.getId());
-			}
-
+	protected TextField getAddAttrNameTextField() {
+		if (addAttrNameTextField == null) {
+			addAttrNameTextField = new TextField(ADD_ATTR_NAME);
 		}
-		return null;
+		return addAttrNameTextField;
 	}
 }

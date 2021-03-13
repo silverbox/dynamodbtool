@@ -3,6 +3,7 @@ package com.silverboxsoft.dynamodbtool.utils;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Base64;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -64,25 +65,25 @@ public class DynamoDbUtils {
 		if (attrVal == null) {
 			return NO_VALSTR;
 		} else if (attrVal.s() != null) {
-			return "STRING";
+			return DynamoDbColumnType.STRING.getDispStr();
 		} else if (attrVal.n() != null) {
-			return "NUMBER";
+			return DynamoDbColumnType.NUMBER.getDispStr();
 		} else if (attrVal.b() != null) {
-			return "BINARY";
+			return DynamoDbColumnType.BINARY.getDispStr();
 		} else if (attrVal.bool() != null) {
-			return "BOOL";
+			return DynamoDbColumnType.BOOLEAN.getDispStr();
 		} else if (attrVal.hasSs()) {
-			return "Set of STRING";
+			return DynamoDbColumnType.STRING_SET.getDispStr();
 		} else if (attrVal.hasNs()) {
-			return "Set of NUMBER";
+			return DynamoDbColumnType.NUMBER_SET.getDispStr();
 		} else if (attrVal.hasBs()) {
-			return "Set of BINARY";
+			return DynamoDbColumnType.BINARY_SET.getDispStr();
 		} else if (attrVal.hasM()) {
-			return "MAP";
+			return DynamoDbColumnType.MAP.getDispStr();
 		} else if (attrVal.hasL()) {
-			return "LIST";
+			return DynamoDbColumnType.LIST.getDispStr();
 		} else if (isNullAttr(attrVal)) {
-			return "NULL";
+			return DynamoDbColumnType.NULL.getDispStr();
 		}
 		return "UNKNOWN";
 	}
@@ -165,6 +166,35 @@ public class DynamoDbUtils {
 		return wkStr.equals("AttributeValue(NUL=true)");
 	}
 
+	public static List<String> getSortedAttrNameList(Map<String, AttributeValue> dynamoDbRecord) {
+		List<String> attrNameList = new ArrayList<>(dynamoDbRecord.keySet());
+		attrNameList.sort(
+				Comparator.comparing(attrName -> getDynamoDbColumnType(dynamoDbRecord.get(attrName)).getDispOrd()));
+		return attrNameList;
+	}
+
+	public static String getKeyValueStr(TableDescription tableInfo, Map<String, AttributeValue> dynamoDbRecord) {
+		StringBuilder sb = new StringBuilder();
+
+		KeySchemaElement partitionKeyElem = null;
+		KeySchemaElement sortKeyElem = null;
+		List<KeySchemaElement> keyInfos = tableInfo.keySchema();
+		// prepare Key Info
+		for (KeySchemaElement k : keyInfos) {
+			if (k.keyType() == KeyType.HASH) {
+				partitionKeyElem = k;
+			} else if (k.keyType() == KeyType.RANGE) {
+				sortKeyElem = k;
+			}
+		}
+		sb.append(getAttrString(dynamoDbRecord.get(partitionKeyElem.attributeName())));
+		if (sortKeyElem != null) {
+			sb.append(" - ");
+			sb.append(getAttrString(dynamoDbRecord.get(sortKeyElem.attributeName())));
+		}
+		return sb.toString();
+	}
+
 	public static List<DynamoDbColumn> getSortedSchemeAttrNameList(TableDescription tableInfo) {
 		KeySchemaElement partitionKeyElem = null;
 		KeySchemaElement sortKeyElem = null;
@@ -211,5 +241,24 @@ public class DynamoDbUtils {
 			}
 		}
 		return columnList;
+	}
+
+	// TODO don't use exception
+	public static boolean isNumericStr(String checkStr) {
+		try {
+			getBigDecimal(checkStr);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
+	}
+
+	public static boolean isBase64Str(String checkStr) {
+		try {
+			getSdkBytesFromBase64String(checkStr);
+			return true;
+		} catch (NumberFormatException e) {
+			return false;
+		}
 	}
 }

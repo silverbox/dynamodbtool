@@ -7,8 +7,8 @@ import javafx.scene.control.TextField;
 
 public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<String> {
 
-	public DynamoDbStringSetInputDialog(List<String> dynamoDbRecord) {
-		super(dynamoDbRecord);
+	public DynamoDbStringSetInputDialog(List<String> dynamoDbRecord, String dialogTitle) {
+		super(dynamoDbRecord, dialogTitle);
 	}
 
 	@Override
@@ -27,5 +27,15 @@ public class DynamoDbStringSetInputDialog extends AbsDynamoDbSetInputDialog<Stri
 	protected String getCurrentAttrubuteValue(Node valueNode) {
 		TextField valField = (TextField) valueNode;
 		return valField.getText();
-	};
+	}
+
+	@Override
+	protected String getInitAttribute() {
+		return "";
+	}
+
+	@Override
+	protected boolean isSameValue(String valA, String valB) {
+		return valA.equals(valB);
+	}
 }
