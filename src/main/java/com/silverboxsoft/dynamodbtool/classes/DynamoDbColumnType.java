@@ -7,25 +7,33 @@ import software.amazon.awssdk.core.SdkBytes;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 
 public enum DynamoDbColumnType {
-	STRING("STRING", DynamoDbColumnTypeCategory.SCALAR), NUMBER("NUMBER", DynamoDbColumnTypeCategory.SCALAR), BOOLEAN(
-			"BOOL", DynamoDbColumnTypeCategory.SCALAR), BINARY("BINARY",
-					DynamoDbColumnTypeCategory.SCALAR), NULL("NULL", DynamoDbColumnTypeCategory.SCALAR), STRING_SET(
-							"Set of STRING", DynamoDbColumnTypeCategory.SET), NUMBER_SET("Set of NUMBER",
-									DynamoDbColumnTypeCategory.SET), BINARY_SET("Set of BINARY",
-											DynamoDbColumnTypeCategory.SET), MAP("MAP",
-													DynamoDbColumnTypeCategory.DOCUMENT), LIST("LIST",
-															DynamoDbColumnTypeCategory.DOCUMENT);
+	STRING("STRING", 0, DynamoDbColumnTypeCategory.SCALAR), //
+	NUMBER("NUMBER", 1, DynamoDbColumnTypeCategory.SCALAR), //
+	BOOLEAN("BOOL", 2, DynamoDbColumnTypeCategory.SCALAR), //
+	BINARY("BINARY", 3, DynamoDbColumnTypeCategory.SCALAR), //
+	NULL("NULL", 4, DynamoDbColumnTypeCategory.SCALAR), //
+	STRING_SET("Set of STRING", 5, DynamoDbColumnTypeCategory.SET), //
+	NUMBER_SET("Set of NUMBER", 6, DynamoDbColumnTypeCategory.SET), //
+	BINARY_SET("Set of BINARY", 7, DynamoDbColumnTypeCategory.SET), //
+	MAP("MAP", 8, DynamoDbColumnTypeCategory.DOCUMENT), //
+	LIST("LIST", 9, DynamoDbColumnTypeCategory.DOCUMENT); //
 
 	private final String dispStr;
+	private final int dispOrd;
 	private final DynamoDbColumnTypeCategory category;
 
-	DynamoDbColumnType(String dispStr, DynamoDbColumnTypeCategory category) {
+	DynamoDbColumnType(String dispStr, int dispOrd, DynamoDbColumnTypeCategory category) {
 		this.dispStr = dispStr;
+		this.dispOrd = dispOrd;
 		this.category = category;
 	}
 
 	public String getDispStr() {
 		return dispStr;
+	}
+
+	public int getDispOrd() {
+		return dispOrd;
 	}
 
 	public DynamoDbColumnTypeCategory getCategory() {

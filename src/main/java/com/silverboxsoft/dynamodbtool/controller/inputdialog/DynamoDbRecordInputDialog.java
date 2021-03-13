@@ -22,7 +22,8 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 	private Set<String> keyColumnSet;
 
 	public DynamoDbRecordInputDialog(TableDescription tableInfo, Map<String, AttributeValue> dynamoDbRecord) {
-		super(dynamoDbRecord);
+		super(dynamoDbRecord, "");
+		this.setTitle(DynamoDbUtils.getKeyValueStr(tableInfo, dynamoDbRecord));
 		tblStructColumnList = DynamoDbUtils.getSortedSchemeAttrNameList(tableInfo);
 		List<KeySchemaElement> keyInfos = tableInfo.keySchema();
 		keyInfos.stream().forEach(elem -> getKeyColumnSet().add(elem.attributeName()));
@@ -47,9 +48,10 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 		}
 
 		// pick up the data which attribute name is come yet.
-		Set<String> unsetKeyNameSet = getDynamoDbRecordOrg().keySet();
+		// Set<String> unsetKeyNameSet = getDynamoDbRecordOrg().keySet();
+		List<String> allAttrNameList = DynamoDbUtils.getSortedAttrNameList(getDynamoDbRecordOrg());
 		Set<String> keyNameSet = attrNameList.stream().collect(Collectors.toSet());
-		for (String newAttrName : unsetKeyNameSet) {
+		for (String newAttrName : allAttrNameList) {
 			if (keyNameSet.contains(newAttrName)) {
 				continue;
 			}
