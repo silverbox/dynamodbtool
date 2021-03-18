@@ -79,7 +79,7 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 
 	@Override
 	protected int getValueColIndex() {
-		return 1;
+		return 2;
 	};
 
 	@Override
