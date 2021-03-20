@@ -17,9 +17,9 @@
                <children>
                   <Label fx:id="lblSortKey" layoutX="100.0" layoutY="60.0" text="-" />
                   <Label layoutX="12.0" layoutY="60.0" text="Sort key =" />
-                  <Button id="btnTest" layoutX="360.0" layoutY="110.0" mnemonicParsing="false" onAction="#actLoad" text="Load" />
-                  <TextField fx:id="txtFldColumnName" layoutX="10.0" layoutY="110.0" promptText="condition column" />
-                  <TextField fx:id="txtFldCondValue" layoutX="192.0" layoutY="110.0" promptText="condition value" />
+                  <Button id="btnTest" layoutX="8.0" layoutY="90.0" mnemonicParsing="false" onAction="#actLoad" prefHeight="25.0" prefWidth="73.0" text="Load" />
+                  <TextField fx:id="txtFldColumnName" layoutX="286.0" layoutY="90.0" prefHeight="25.0" prefWidth="183.0" promptText="condition column" />
+                  <TextField fx:id="txtFldCondValue" layoutX="509.0" layoutY="90.0" prefHeight="25.0" prefWidth="292.0" promptText="condition value" AnchorPane.leftAnchor="500.0" AnchorPane.rightAnchor="5.0" />
                   <Label layoutX="360.0" layoutY="12.0" text="Record count =" />
                   <Label layoutX="360.0" layoutY="36.0" text="Total size =" />
                   <Label fx:id="lblRecordCount" contentDisplay="RIGHT" layoutX="450.0" layoutY="12.0" minHeight="-Infinity" minWidth="-Infinity" prefHeight="17.0" prefWidth="76.0" text="0" textAlignment="RIGHT" textOverrun="CLIP">
@@ -32,9 +32,15 @@
                   <Label layoutX="12.0" layoutY="36.0" text="Partition key =" />
                   <Label layoutX="12.0" layoutY="12.0" text="Table name =" />
                   <Label fx:id="lblTableName" layoutX="100.0" layoutY="12.0" text="-" />
-                  <Label layoutX="12.0" layoutY="88.0" text="Load conditions" />
                   <Separator layoutX="124.0" layoutY="84.0" prefWidth="200.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" />
-                  <Label layoutX="171.0" layoutY="112.0" text="=" />
+                  <Label layoutX="479.0" layoutY="92.0" text="=" />
+                  <TextArea fx:id="txtAreaPartiql" layoutX="1.0" layoutY="119.0" prefHeight="62.0" prefWidth="798.0" promptText="Input PartiQL" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="120.0" />
+                  <RadioButton fx:id="radioLoadPartiQL" layoutX="112.0" layoutY="94.0" mnemonicParsing="false" onKeyPressed="#onLoadTypeChange" onMouseClicked="#onLoadTypeChange" selected="true" text="PartiQL">
+                     <toggleGroup>
+                        <ToggleGroup fx:id="loadType" />
+                     </toggleGroup>
+                  </RadioButton>
+                  <RadioButton fx:id="radioLoadKeyValue" layoutX="207.0" layoutY="94.0" mnemonicParsing="false" text="Key value" toggleGroup="$loadType" />
                </children>
             </AnchorPane>
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">

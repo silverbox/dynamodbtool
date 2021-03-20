@@ -25,11 +25,9 @@ public class ScanDao extends AbsDao {
 		String tableName = tableInfo.tableName();
 		DynamoDbClient ddb = getDbClient();
 		try {
-			ScanRequest scanRequest = ScanRequest.builder()
-					.tableName(tableName)
-					.build();
+			ScanRequest scanRequest = ScanRequest.builder().tableName(tableName).build();
 
-			return new DynamoDbResult(ddb.scan(scanRequest), tableInfo);
+			return new DynamoDbResult(ddb.scan(scanRequest).items(), tableInfo);
 		} finally {
 			ddb.close();
 		}
