@@ -50,7 +50,7 @@ public class QueryDao extends AbsDao {
 					.build();
 
 			QueryResponse response = ddb.query(queryReq);
-			return new DynamoDbResult(response, tableInfo);
+			return new DynamoDbResult(response.items(), tableInfo);
 		} finally {
 			ddb.close();
 		}
