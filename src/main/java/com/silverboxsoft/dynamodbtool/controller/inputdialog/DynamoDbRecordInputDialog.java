@@ -11,9 +11,11 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn;
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
 import javafx.scene.Node;
+import javafx.scene.control.ButtonBar.ButtonData;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Dialog;
+import javafx.scene.control.DialogEvent;
 import javafx.scene.control.TextField;
 import software.amazon.awssdk.services.dynamodb.model.AttributeValue;
 import software.amazon.awssdk.services.dynamodb.model.KeySchemaElement;
@@ -64,6 +66,7 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 		return retList;
 	}
 
+	@Override
 	protected List<Node> getOneBodyAttributeNodeList(String attrName, AttributeValue attrValue) {
 		List<Node> retList = super.getOneBodyAttributeNodeList(attrName, attrValue);
 		if (getKeyColumnSet().contains(attrName)) {
@@ -80,20 +83,18 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 	}
 
 	@Override
-	boolean isFinalValidationOk() {
-		if (super.isFinalValidationOk()) {
+	protected void doFinalConfirmation(DialogEvent dialogEvent) {
+		super.doFinalConfirmation(dialogEvent);
+		if (!dialogEvent.isConsumed() && getButtonData() == ButtonData.OK_DONE) {
 			Dialog<ButtonType> dialog = new Dialog<>();
 			dialog.setContentText("This DynamoDB record will be update. Is it OK?");
 			dialog.getDialogPane().getButtonTypes().addAll(ButtonType.YES, ButtonType.NO);
-			final DialogResult dialogResult = new DialogResult();
 			dialog.showAndWait().ifPresent(buttonType -> {
-				if (buttonType == ButtonType.YES) {
-					dialogResult.result = true;
+				if (buttonType != ButtonType.YES) {
+					dialogEvent.consume();
 				}
 			});
-			return dialogResult.result;
 		}
-		return false;
 	}
 
 	private Set<String> getKeyColumnSet() {
@@ -103,7 +104,4 @@ public class DynamoDbRecordInputDialog extends DynamoDbMapInputDialog {
 		return keyColumnSet;
 	}
 
-	private class DialogResult {
-		boolean result = false;
-	}
 }

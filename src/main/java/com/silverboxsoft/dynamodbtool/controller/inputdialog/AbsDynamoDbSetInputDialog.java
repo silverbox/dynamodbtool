@@ -87,6 +87,11 @@ public abstract class AbsDynamoDbSetInputDialog<T> extends AbsDynamoDbInputDialo
 	}
 
 	@Override
+	protected List<T> getEmptyAttr() {
+		return new ArrayList<>();
+	}
+
+	@Override
 	protected void actAddNewAttribute() {
 		int recIdx = getNewRecIdx();
 		String newIdStr = String.valueOf(recIdx);
