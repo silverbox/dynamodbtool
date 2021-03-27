@@ -41,6 +41,9 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 	private final AnchorPane gridAnchorPane;
 	private final Button addButton;
 
+	private ButtonData buttonData;
+	private boolean isValidData = false;
+
 	private R dynamoDbRecordOrg;
 	List<List<Node>> orgBodyAttribueNodeList = new ArrayList<>();
 	List<List<Node>> addBodyAttribueNodeList = new ArrayList<>();
@@ -65,16 +68,17 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 		this.setResizable(true);
 		this.getDialogPane().getButtonTypes().addAll(ButtonType.OK, ButtonType.CANCEL);
 		this.setTitle(dialogTitle);
-		this.setOnCloseRequest(this::doFinalValidation);
+		this.setOnCloseRequest(this::doFinalConfirmation);
 
 		dynamoDbRecordOrg = dynamoDbRecord;
 
 		setResultConverter((dialogButton) -> {
-			ButtonData data = dialogButton == null ? null : dialogButton.getButtonData();
-
-			return data == ButtonData.OK_DONE
-					? getEditedDynamoDbRecord()
-					: null;
+			buttonData = dialogButton == null ? null : dialogButton.getButtonData();
+			if (buttonData == ButtonData.OK_DONE) {
+				isValidData = isFinalValidationOk();
+				return isValidData ? getEditedDynamoDbRecord() : getEmptyAttr();
+			}
+			return null;
 		});
 
 		headGridPane = new GridPane();
@@ -111,6 +115,8 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 	 */
 	abstract R getEditedDynamoDbRecord();
 
+	abstract R getEmptyAttr();
+
 	/*
 	 * for add attribute action
 	 */
@@ -138,6 +144,10 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 
 	protected Button getAddButton() {
 		return addButton;
+	}
+
+	protected ButtonData getButtonData() {
+		return buttonData;
 	}
 
 	/*
@@ -204,6 +214,15 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 		sb_style.append("-fx-border-width: 0 0 1 0;");
 		node.setStyle(sb_style.toString());
 		return node;
+	}
+
+	protected void doFinalConfirmation(DialogEvent dialogEvent) {
+		if (buttonData != ButtonData.OK_DONE) {
+			return;
+		}
+		if (!isValidData) {
+			dialogEvent.consume();
+		}
 	}
 
 	/*
@@ -327,12 +346,6 @@ public abstract class AbsDynamoDbInputDialog<R> extends Dialog<R> {
 		List<Node> footerNode = getFooterNodeList();
 		for (int cIdx = 0; cIdx < footerNode.size(); cIdx++) {
 			footGridPane.add(footerNode.get(cIdx), cIdx, 0);
-		}
-	}
-
-	private void doFinalValidation(DialogEvent dialogEvent) {
-		if (!isFinalValidationOk()) { // TODO
-			dialogEvent.consume();
 		}
 	}
 }

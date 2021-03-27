@@ -109,7 +109,12 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	}
 
 	@Override
-	void actAddNewAttribute() {
+	protected Map<String, AttributeValue> getEmptyAttr() {
+		return new HashMap<>();
+	}
+
+	@Override
+	protected void actAddNewAttribute() {
 		String attrName = getAddAttrNameTextField().getText();
 		AttributeValue attrVal = getAttributeFromNode(addAttrValueNode);
 		if (!addValidationCheck(attrName, attrVal)) {
@@ -122,7 +127,7 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 	}
 
 	@Override
-	boolean isFinalValidationOk() {
+	protected boolean isFinalValidationOk() {
 		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
 		for (List<Node> wkNodeList : currentBodyNodeList) {
 			CheckBox delCheck = (CheckBox) wkNodeList.get(COL_IDX_DEL);

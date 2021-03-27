@@ -9,8 +9,8 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectType;
 import com.silverboxsoft.dynamodbtool.dao.TableListDao;
 import com.silverboxsoft.dynamodbtool.fxmodel.TableNameCondType;
 
-import javafx.application.Platform;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -91,18 +91,29 @@ public class DynamoDbToolController implements Initializable {
 
 	@FXML
 	protected void actTableListLoad(ActionEvent ev) {
-		startWaiting();
-		try {
-			TableListDao dao = new TableListDao(getConnectInfo());
-			TableNameCondType conditionType = TableNameCondType.getByName(cmbTableNameCond.getValue());
-			lvTableList.getItems().clear();
-			lvTableList.getItems().addAll(dao.getTableList(txtFldTableNameCond.getText(), conditionType));
-		} catch (Exception e) {
-			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
-			alert.show();
-		} finally {
-			finishWaiting();
-		}
+		Task<Boolean> task = new Task<Boolean>() {
+			@Override
+			public Boolean call() {
+				try {
+					TableListDao dao = new TableListDao(getConnectInfo());
+					TableNameCondType conditionType = TableNameCondType.getByName(cmbTableNameCond.getValue());
+					lvTableList.getItems().clear();
+					lvTableList.getItems().addAll(dao.getTableList(txtFldTableNameCond.getText(), conditionType));
+				} catch (Exception e) {
+					Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+					alert.show();
+				}
+				return true;
+			}
+		};
+		task.setOnRunning((e) -> dialog.show());
+		task.setOnSucceeded((e) -> {
+			dialog.hide();
+		});
+		task.setOnFailed((e) -> {
+			dialog.hide();
+		});
+		new Thread(task).start();
 	}
 
 	@FXML
@@ -135,24 +146,6 @@ public class DynamoDbToolController implements Initializable {
 		for (int wkIdx = activeIndex - 1; wkIdx >= 0; wkIdx--) {
 			tabPaneTable.getTabs().remove(wkIdx);
 		}
-	}
-
-	private void startWaiting() {
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				dialog.show();
-			}
-		});
-	}
-
-	private void finishWaiting() {
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				dialog.close();
-			}
-		});
 	}
 
 	/*

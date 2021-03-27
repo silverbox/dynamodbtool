@@ -20,10 +20,10 @@ import com.silverboxsoft.dynamodbtool.dao.QueryDao;
 import com.silverboxsoft.dynamodbtool.dao.ScanDao;
 import com.silverboxsoft.dynamodbtool.dao.TableInfoDao;
 
-import javafx.application.Platform;
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
 import javafx.collections.ObservableList;
+import javafx.concurrent.Task;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.fxml.FXML;
@@ -176,38 +176,48 @@ public class DynamoDbTable extends AnchorPane {
 
 	@FXML
 	protected void actLoad(ActionEvent ev) throws Exception {
-		startWaiting();
-		try {
-			DynamoDbResult result = null;
-			if (radioLoadPartiQL.isSelected()) {
-				PartiQLDao partqlDao = new PartiQLDao(connInfo);
-				result = partqlDao.getResult(currentTableInfo, txtAreaPartiql.getText());
-			} else {
-				String condColumn = txtFldColumnName.getText();
-				String condValue = txtFldCondValue.getText();
-				if (!StringUtils.isEmpty(condColumn) && !StringUtils.isEmpty(condValue)) {
-					QueryDao dao = new QueryDao(connInfo);
-					List<DynamoDbCondition> conditionList = new ArrayList<>();
-					DynamoDbCondition cond = new DynamoDbCondition();
-					cond.setColumnName(condColumn);
-					cond.setConditionType(DynamoDbConditionType.EQUAL);
-					cond.setValue(condValue);
-					conditionList.add(cond);
-					result = dao.getResult(currentTableInfo, DynamoDbConditionJoinType.AND, conditionList);
-				} else {
-					ScanDao dao = new ScanDao(connInfo);
-					result = dao.getResult(currentTableInfo);
+		Task<Boolean> task = new Task<Boolean>() {
+			@Override
+			public Boolean call() {
+				try {
+					DynamoDbResult result = null;
+					if (radioLoadPartiQL.isSelected()) {
+						PartiQLDao partqlDao = new PartiQLDao(connInfo);
+						result = partqlDao.getResult(currentTableInfo, txtAreaPartiql.getText());
+					} else {
+						String condColumn = txtFldColumnName.getText();
+						String condValue = txtFldCondValue.getText();
+						if (!StringUtils.isEmpty(condColumn) && !StringUtils.isEmpty(condValue)) {
+							QueryDao dao = new QueryDao(connInfo);
+							List<DynamoDbCondition> conditionList = new ArrayList<>();
+							DynamoDbCondition cond = new DynamoDbCondition();
+							cond.setColumnName(condColumn);
+							cond.setConditionType(DynamoDbConditionType.EQUAL);
+							cond.setValue(condValue);
+							conditionList.add(cond);
+							result = dao.getResult(currentTableInfo, DynamoDbConditionJoinType.AND, conditionList);
+						} else {
+							ScanDao dao = new ScanDao(connInfo);
+							result = dao.getResult(currentTableInfo);
+						}
+					}
+					dynamoDbResult = result;
+				} catch (Exception e) {
+					Alert alert = new Alert(AlertType.ERROR, e.getMessage());
+					alert.show();
 				}
+				return true;
 			}
-			this.dynamoDbResult = result;
-			setTable(result);
-		} catch (Exception e) {
-			e.printStackTrace();
-			Alert alert = new Alert(AlertType.ERROR, e.getMessage());
-			alert.show();
-		} finally {
-			finishWaiting();
-		}
+		};
+		task.setOnRunning((e) -> dialog.show());
+		task.setOnSucceeded((e) -> {
+			setTable(dynamoDbResult);
+			dialog.hide();
+		});
+		task.setOnFailed((e) -> {
+			dialog.hide();
+		});
+		new Thread(task).start();
 	}
 
 	@FXML
@@ -407,23 +417,5 @@ public class DynamoDbTable extends AnchorPane {
 		TableColumn<ObservableList<String>, String> dataCol = new TableColumn<>(columnName);
 		dataCol.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(finalColIdx)));
 		return dataCol;
-	}
-
-	private void startWaiting() {
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				dialog.show();
-			}
-		});
-	}
-
-	private void finishWaiting() {
-		Platform.runLater(new Runnable() {
-			@Override
-			public void run() {
-				dialog.close();
-			}
-		});
 	}
 }

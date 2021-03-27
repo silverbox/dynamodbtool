@@ -67,7 +67,7 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 	}
 
 	@Override
-	List<Node> getFooterNodeList() {
+	protected List<Node> getFooterNodeList() {
 		List<Node> retList = new ArrayList<>();
 		addAttrValueNode = getAtrributeBox(ADD_INDEX, getSelectedAddType().getInitValue());
 		retList.add(new Label("new Index"));
@@ -99,7 +99,12 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 	}
 
 	@Override
-	void actAddNewAttribute() {
+	protected List<AttributeValue> getEmptyAttr() {
+		return new ArrayList<>();
+	}
+
+	@Override
+	protected void actAddNewAttribute() {
 		int recIdx = getNewRecIdx();
 		String newIdStr = String.valueOf(recIdx);
 		AttributeValue attrVal = getAttributeFromNode(addAttrValueNode);
@@ -112,7 +117,7 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 	}
 
 	@Override
-	boolean isFinalValidationOk() {
+	protected boolean isFinalValidationOk() {
 		List<List<Node>> currentBodyNodeList = getCurrentBodyNodeList();
 		for (List<Node> wkNodeList : currentBodyNodeList) {
 			CheckBox delCheck = (CheckBox) wkNodeList.get(COL_IDX_DEL);
@@ -175,7 +180,7 @@ public class DynamoDbListInputDialog extends AbsDynamoDbDocumentInputDialog<List
 	}
 
 	@Override
-	void onAddTypeComboSelChanged(String oldValue, String newValue) {
+	protected void onAddTypeComboSelChanged(String oldValue, String newValue) {
 		tempAddAttrValue = null;
 		updateFooter();
 	}
