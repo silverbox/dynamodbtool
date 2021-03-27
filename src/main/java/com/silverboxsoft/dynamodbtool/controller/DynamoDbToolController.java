@@ -6,6 +6,7 @@ import java.util.ResourceBundle;
 
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectType;
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbErrorInfo;
 import com.silverboxsoft.dynamodbtool.dao.TableListDao;
 import com.silverboxsoft.dynamodbtool.fxmodel.TableNameCondType;
 
@@ -91,17 +92,19 @@ public class DynamoDbToolController implements Initializable {
 
 	@FXML
 	protected void actTableListLoad(ActionEvent ev) {
+		final DynamoDbErrorInfo errInfo = new DynamoDbErrorInfo();
 		Task<Boolean> task = new Task<Boolean>() {
 			@Override
-			public Boolean call() {
+			public Boolean call() throws Exception {
 				try {
 					TableListDao dao = new TableListDao(getConnectInfo());
 					TableNameCondType conditionType = TableNameCondType.getByName(cmbTableNameCond.getValue());
 					lvTableList.getItems().clear();
 					lvTableList.getItems().addAll(dao.getTableList(txtFldTableNameCond.getText(), conditionType));
 				} catch (Exception e) {
-					Alert alert = new Alert(AlertType.ERROR, e.getMessage());
-					alert.show();
+					errInfo.setMessage(e.getMessage());
+					e.printStackTrace();
+					throw e;
 				}
 				return true;
 			}
@@ -112,6 +115,8 @@ public class DynamoDbToolController implements Initializable {
 		});
 		task.setOnFailed((e) -> {
 			dialog.hide();
+			Alert alert = new Alert(AlertType.ERROR, errInfo.getMessage());
+			alert.show();
 		});
 		new Thread(task).start();
 	}

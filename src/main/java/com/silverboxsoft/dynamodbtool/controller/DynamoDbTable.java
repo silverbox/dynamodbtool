@@ -12,6 +12,7 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbCondition;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionJoinType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbErrorInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult;
 import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog;
 import com.silverboxsoft.dynamodbtool.dao.PartiQLDao;
@@ -176,9 +177,10 @@ public class DynamoDbTable extends AnchorPane {
 
 	@FXML
 	protected void actLoad(ActionEvent ev) throws Exception {
+		final DynamoDbErrorInfo errInfo = new DynamoDbErrorInfo();
 		Task<Boolean> task = new Task<Boolean>() {
 			@Override
-			public Boolean call() {
+			public Boolean call() throws Exception {
 				try {
 					DynamoDbResult result = null;
 					if (radioLoadPartiQL.isSelected()) {
@@ -203,8 +205,9 @@ public class DynamoDbTable extends AnchorPane {
 					}
 					dynamoDbResult = result;
 				} catch (Exception e) {
-					Alert alert = new Alert(AlertType.ERROR, e.getMessage());
-					alert.show();
+					errInfo.setMessage(e.getMessage());
+					e.printStackTrace();
+					throw e;
 				}
 				return true;
 			}
@@ -215,6 +218,8 @@ public class DynamoDbTable extends AnchorPane {
 			dialog.hide();
 		});
 		task.setOnFailed((e) -> {
+			Alert alert = new Alert(AlertType.ERROR, errInfo.getMessage());
+			alert.show();
 			dialog.hide();
 		});
 		new Thread(task).start();
@@ -379,7 +384,7 @@ public class DynamoDbTable extends AnchorPane {
 		lblSortKey.setText("-");
 
 		List<KeySchemaElement> keyInfos = currentTableInfo.keySchema();
-		String defPartQL = String.format("select * from %1$s where ", tableName);
+		String defPartQL = String.format("select * from \"%1$s\" where ", tableName);
 		StringBuilder sbPartiQL = new StringBuilder(defPartQL);
 		boolean hasSortKey = false;
 		for (KeySchemaElement k : keyInfos) {
