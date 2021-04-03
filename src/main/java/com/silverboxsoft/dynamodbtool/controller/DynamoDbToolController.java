@@ -143,6 +143,15 @@ public class DynamoDbToolController implements Initializable {
 	}
 
 	@FXML
+	protected void actCopyAdd(ActionEvent ev) throws Exception {
+		DynamoDbTable activeTable = getActiveDynamoDbTable();
+		if (activeTable == null) {
+			return;
+		}
+		activeTable.actCopyAdd(ev);
+	}
+
+	@FXML
 	protected void actShowTableInfo(ActionEvent ev) throws Exception {
 		DynamoDbTable activeTable = getActiveDynamoDbTable();
 		if (activeTable == null) {
@@ -152,7 +161,9 @@ public class DynamoDbToolController implements Initializable {
 		StringBuilder sb = new StringBuilder();
 		sb.append("Table name = ").append(desc.tableName()).append("\r\n");
 		sb.append("Partition key name = ").append(activeTable.getPartitionKeyName()).append("\r\n");
-		sb.append("Sort key name = ").append(activeTable.getSortKeyName()).append("\r\n");
+		if (activeTable.hasSortKey()) {
+			sb.append("Sort key name = ").append(activeTable.getSortKeyName()).append("\r\n");
+		}
 		sb.append("Record count = ").append(desc.itemCount()).append("\r\n");
 		sb.append("Byte size = ").append(desc.tableSizeBytes()).append("\r\n");
 		Alert tableInfoDialog = new Alert(AlertType.NONE);

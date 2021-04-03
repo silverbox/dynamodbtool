@@ -206,28 +206,24 @@ public class DynamoDbTable extends AnchorPane {
 				rec.put(dbCol.getColumnName(), dbCol.getColumnType().getInitValue());
 			}
 		}
-		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.ADD);
-		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
-		if (newRecWk.isPresent()) {
-			Map<String, AttributeValue> newRec = newRecWk.get();
-			PutItemDao dao = new PutItemDao(connInfo);
-			dao.putItem(currentTableInfo, newRec);
+		doAdd(rec);
+	}
 
-			dynamoDbResult.addRecord(newRec);
-			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
-			tableResultList.getItems().add(tableRec);
+	public void actCopyAdd(ActionEvent ev) throws Exception {
+		int row = getCurrentRow();
+		if (row < 0) {
+			return;
 		}
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+		doAdd(rec);
 	}
 
 	public void actUpdate(ActionEvent ev) throws URISyntaxException {
-		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
-		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
-		if (posList.size() == 0) {
+		int row = getCurrentRow();
+		if (row < 0) {
 			return;
 		}
-		int row = posList.get(0).getValue();
 		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
-
 		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.UPD);
 		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
 		if (newRecWk.isPresent()) {
@@ -242,12 +238,10 @@ public class DynamoDbTable extends AnchorPane {
 	}
 
 	public void actDel(ActionEvent ev) throws Exception {
-		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
-		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
-		if (posList.size() == 0) {
+		int row = getCurrentRow();
+		if (row < 0) {
 			return;
 		}
-		int row = posList.get(0).getValue();
 		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
 
 		StringBuilder sb = new StringBuilder();
@@ -393,6 +387,29 @@ public class DynamoDbTable extends AnchorPane {
 			oldRow = position.getValue();
 		}
 		return selectedRowStrSb.toString();
+	}
+
+	private int getCurrentRow() {
+		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
+		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
+		if (posList.size() == 0) {
+			return -1;
+		}
+		return posList.get(0).getValue();
+	}
+
+	private void doAdd(Map<String, AttributeValue> rec) throws URISyntaxException {
+		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.ADD);
+		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
+		if (newRecWk.isPresent()) {
+			Map<String, AttributeValue> newRec = newRecWk.get();
+			PutItemDao dao = new PutItemDao(connInfo);
+			dao.putItem(currentTableInfo, newRec);
+
+			dynamoDbResult.addRecord(newRec);
+			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
+			tableResultList.getItems().add(tableRec);
+		}
 	}
 
 	@SuppressWarnings("unchecked")

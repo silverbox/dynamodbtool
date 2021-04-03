@@ -62,6 +62,7 @@
         <items>
           <Button fx:id="btnLoad" mnemonicParsing="false" onAction="#actLoad" text="Load" />
             <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#actAdd" text="Add" />
+            <Button fx:id="btnCopyAdd" mnemonicParsing="false" onAction="#actCopyAdd" text="Copy add" />
             <Button fx:id="btnDel" mnemonicParsing="false" onAction="#actDel" text="Delete" />
         </items>
       </ToolBar>
