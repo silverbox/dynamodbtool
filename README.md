@@ -16,7 +16,8 @@ Not only AWS DynamoDB but also local DynamoDB available. It's not service with b
 - Show basic info of the table(record count, size, key information)
 - Copy selected cell string to PC'S clipboard.
 - Detail information dialog available.
-- Update the record. (Especially, please use it under your responsibility)
+- Add, Update and Delete the record. (Especially, please use it under your responsibility)
+- PartiQL available.
 
 ## Requirement
 
@@ -82,15 +83,27 @@ java --module-path {PATH_TO_LIB} --add-modules=javafx.controls,javafx.fxml -jar 
 
 ## How to use
 
+### Show table info
 1. launch the tool
 1. select which connection you use. (AWS DynamoDB / local DynamoDB)
 1. input load condition of table list.
 1. enter Return. then you can see the table list.
 1. double click the table name you want to view.
-1. you can see the information of target table at right up area.
-1. specify the value of condition if required.
+1. you can see the information of target table from menu action [View > Table info].
+
+### Load
+1. input partiQL string or specify the value of condition if required.
 1. click the ```Load``` button.
 1. You can range select. and copy selected cells string to clipboard.
-1. If you double click a Table record, then you can see detail dialog.
+
+### Update
+1. Double click a Table record, then you can see detail dialog.
 1. You can edit the value by edit the field(Scalar type value).
 1. You can edit the value by open child dialog(Set, Document type value).
+
+### Delete
+1. Select a target record, then click the ```Delete``` button.
+
+### Add
+1. Click the ```Add``` button.
+1. Input the value of each attribute.

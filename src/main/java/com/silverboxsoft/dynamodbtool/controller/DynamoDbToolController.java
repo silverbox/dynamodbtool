@@ -242,7 +242,7 @@ public class DynamoDbToolController implements Initializable {
 
 	private DynamoDbTable getActiveDynamoDbTable() {
 		int activeIndex = tabPaneTable.getSelectionModel().getSelectedIndex();
-		if (activeIndex >= tabPaneTable.getTabs().size()) {
+		if (activeIndex >= tabPaneTable.getTabs().size() || activeIndex < 0) {
 			return null;
 		}
 		Tab activeTab = tabPaneTable.getTabs().get(activeIndex);
