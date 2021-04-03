@@ -16,7 +16,7 @@ Not only AWS DynamoDB but also local DynamoDB available. It's not service with b
 - Show basic info of the table(record count, size, key information)
 - Copy selected cell string to PC'S clipboard.
 - Detail information dialog available.
-- Add, Update and Delete the record. (Especially, please use it under your responsibility)
+- Add(Copy), Update and Delete the record. (Especially, please use it under your responsibility)
 - PartiQL available.
 
 ## Requirement
