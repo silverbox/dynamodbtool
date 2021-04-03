@@ -22,6 +22,7 @@ import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.Tab;
@@ -30,6 +31,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
+import software.amazon.awssdk.services.dynamodb.model.TableDescription;
 
 public class DynamoDbToolController implements Initializable {
 
@@ -46,6 +48,12 @@ public class DynamoDbToolController implements Initializable {
 
 	@FXML
 	TextField txtFldLocalEndpoint;
+
+	@FXML
+	MenuItem miAddAllKeyCond;
+
+	@FXML
+	MenuItem miAddPartitionKeyCond;
 
 	/*
 	 * Table Name Condition
@@ -74,20 +82,6 @@ public class DynamoDbToolController implements Initializable {
 	public void initialize(URL location, ResourceBundle resources) {
 		initCmb();
 		initLoadDialog();
-	}
-
-	private void initLoadDialog() {
-		dialog = new Alert(AlertType.NONE);
-		dialog.setHeaderText(null);
-		dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-		dialog.setContentText("Now Loading...");
-		Pane pane = dialog.getDialogPane();
-		ObservableList<Node> nodes = pane.getChildren();
-		for (Node node : nodes) {
-			if (node instanceof ButtonBar) {
-				node.setVisible(false);
-			}
-		}
 	}
 
 	@FXML
@@ -119,6 +113,53 @@ public class DynamoDbToolController implements Initializable {
 			alert.show();
 		});
 		new Thread(task).start();
+	}
+
+	@FXML
+	protected void actLoad(ActionEvent ev) throws Exception {
+		DynamoDbTable activeTable = getActiveDynamoDbTable();
+		if (activeTable == null) {
+			return;
+		}
+		activeTable.actLoad(ev);
+	}
+
+	@FXML
+	protected void actAdd(ActionEvent ev) throws Exception {
+		DynamoDbTable activeTable = getActiveDynamoDbTable();
+		if (activeTable == null) {
+			return;
+		}
+		activeTable.actAdd(ev);
+	}
+
+	@FXML
+	protected void actDel(ActionEvent ev) throws Exception {
+		DynamoDbTable activeTable = getActiveDynamoDbTable();
+		if (activeTable == null) {
+			return;
+		}
+		activeTable.actDel(ev);
+	}
+
+	@FXML
+	protected void actShowTableInfo(ActionEvent ev) throws Exception {
+		DynamoDbTable activeTable = getActiveDynamoDbTable();
+		if (activeTable == null) {
+			return;
+		}
+		TableDescription desc = activeTable.getTableInfo();
+		StringBuilder sb = new StringBuilder();
+		sb.append("Table name = ").append(desc.tableName()).append("\r\n");
+		sb.append("Partition key name = ").append(activeTable.getPartitionKeyName()).append("\r\n");
+		sb.append("Sort key name = ").append(activeTable.getSortKeyName()).append("\r\n");
+		sb.append("Record count = ").append(desc.itemCount()).append("\r\n");
+		sb.append("Byte size = ").append(desc.tableSizeBytes()).append("\r\n");
+		Alert tableInfoDialog = new Alert(AlertType.NONE);
+		tableInfoDialog.setHeaderText("Table Information");
+		tableInfoDialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+		tableInfoDialog.setContentText(sb.toString());
+		tableInfoDialog.showAndWait();
 	}
 
 	@FXML
@@ -173,6 +214,20 @@ public class DynamoDbToolController implements Initializable {
 	 * method
 	 */
 
+	private void initLoadDialog() {
+		dialog = new Alert(AlertType.INFORMATION);
+		dialog.setHeaderText(null);
+		// dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+		dialog.setContentText("Now Loading...");
+		Pane pane = dialog.getDialogPane();
+		ObservableList<Node> nodes = pane.getChildren();
+		for (Node node : nodes) {
+			if (node instanceof ButtonBar) {
+				node.setVisible(false);
+			}
+		}
+	}
+
 	private void initCmb() {
 		cmbTableNameCond.getItems().addAll(TableNameCondType.getTitleList());
 	}
@@ -183,5 +238,14 @@ public class DynamoDbToolController implements Initializable {
 			connectType = DynamoDbConnectType.AWS;
 		}
 		return new DynamoDbConnectInfo(connectType, txtFldLocalEndpoint.getText());
+	}
+
+	private DynamoDbTable getActiveDynamoDbTable() {
+		int activeIndex = tabPaneTable.getSelectionModel().getSelectedIndex();
+		if (activeIndex >= tabPaneTable.getTabs().size()) {
+			return null;
+		}
+		Tab activeTab = tabPaneTable.getTabs().get(activeIndex);
+		return (DynamoDbTable) activeTab.getContent();
 	}
 }

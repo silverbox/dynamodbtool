@@ -27,7 +27,7 @@ public class DynamoDbResult {
 	}
 
 	private void prepareKeyInfo(TableDescription tableInfo) {
-		columnList = DynamoDbUtils.getSortedSchemeAttrNameList(tableInfo);
+		columnList = DynamoDbUtils.getSortedDynamoDbColumnList(tableInfo);
 		for (int idx = 0; idx < columnList.size(); idx++) {
 			colNameIndex.put(columnList.get(idx).getColumnName(), idx);
 		}
@@ -92,7 +92,15 @@ public class DynamoDbResult {
 		return columnList.get(index);
 	}
 
+	public void addRecord(Map<String, AttributeValue> newRec) {
+		rawResItems.add(newRec);
+	}
+
 	public void updateRecord(int rowIndex, Map<String, AttributeValue> newRec) {
 		rawResItems.set(rowIndex, newRec);
+	}
+
+	public void removeRecord(int rowIndex) {
+		rawResItems.remove(rowIndex);
 	}
 }

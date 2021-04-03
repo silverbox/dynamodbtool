@@ -88,7 +88,11 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 
 	@Override
 	protected int getValueColIndex() {
-		return 2;
+		return COL_IDX_FIELD;
+	};
+
+	protected int getDelColIndex() {
+		return COL_IDX_DEL;
 	};
 
 	@Override
@@ -134,8 +138,9 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 			if (delCheck.isSelected()) {
 				continue;
 			}
+			Label keylabel = (Label) wkNodeList.get(COL_IDX_NAME);
 			Node valueNode = wkNodeList.get(COL_IDX_FIELD);
-			if (!checkValueNode(valueNode)) {
+			if (!checkValueNode(keylabel.getText(), valueNode)) {
 				Alert alert = new Alert(AlertType.ERROR, VALIDATION_MSG_INVALID_VALUE);
 				alert.showAndWait();
 				valueNode.requestFocus();
@@ -143,6 +148,10 @@ public class DynamoDbMapInputDialog extends AbsDynamoDbDocumentInputDialog<Map<S
 			}
 		}
 		return true;
+	}
+
+	protected boolean checkValueNode(String attrName, Node valueNode) {
+		return super.checkValueNode(valueNode);
 	}
 
 	/*

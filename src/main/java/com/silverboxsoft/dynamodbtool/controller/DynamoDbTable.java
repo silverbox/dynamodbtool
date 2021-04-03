@@ -4,10 +4,12 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbCondition;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionJoinType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionType;
@@ -15,11 +17,13 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbErrorInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult;
 import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog;
+import com.silverboxsoft.dynamodbtool.dao.DeleteItemDao;
 import com.silverboxsoft.dynamodbtool.dao.PartiQLDao;
 import com.silverboxsoft.dynamodbtool.dao.PutItemDao;
 import com.silverboxsoft.dynamodbtool.dao.QueryDao;
 import com.silverboxsoft.dynamodbtool.dao.ScanDao;
 import com.silverboxsoft.dynamodbtool.dao.TableInfoDao;
+import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
 import javafx.beans.value.ObservableValue;
@@ -31,8 +35,8 @@ import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.SelectionMode;
@@ -64,9 +68,6 @@ public class DynamoDbTable extends AnchorPane {
 	 * Data Condition
 	 */
 	@FXML
-	TextField txtFldColumnName;
-
-	@FXML
 	TextField txtFldCondValue;
 
 	@FXML
@@ -87,21 +88,6 @@ public class DynamoDbTable extends AnchorPane {
 	@FXML
 	AnchorPane paneTableInfo;
 
-	@FXML
-	Label lblTableName;
-
-	@FXML
-	Label lblRecordCount;
-
-	@FXML
-	Label lblTableSize;
-
-	@FXML
-	Label lblPartitionKey;
-
-	@FXML
-	Label lblSortKey;
-
 	/*
 	 * data area
 	 */
@@ -118,6 +104,7 @@ public class DynamoDbTable extends AnchorPane {
 	MenuItem menuItemTableResultListCellSelectMode;
 
 	private static final int TBL_COL_MAX_WIDTH = 1000;
+	private static final String DYMMY_COND_VALUE = "\t\r\n";
 
 	private boolean isCellSelectMode = true;
 	private TableDescription currentTableInfo = null;
@@ -125,6 +112,10 @@ public class DynamoDbTable extends AnchorPane {
 	private DynamoDbConnectInfo connInfo;
 	private String tableName;
 	private DynamoDbResult dynamoDbResult;
+
+	private String partitionKeyName = null;
+	private String sortKeyName = null;
+	private boolean hasSortKey = false;
 
 	public DynamoDbTable() {
 		FXMLLoader fxmlLoader = new FXMLLoader(getClass().getResource(
@@ -147,6 +138,8 @@ public class DynamoDbTable extends AnchorPane {
 		this.dialog = dialog;
 		try {
 			setCurrentTableInfo();
+			doQueryDao(DYMMY_COND_VALUE);
+			setTable(dynamoDbResult);
 			loadType.selectedToggleProperty()
 					.addListener((ObservableValue<? extends Toggle> observ, Toggle oldVal, Toggle newVal) -> {
 						onLoadTypeChange(null);
@@ -159,51 +152,27 @@ public class DynamoDbTable extends AnchorPane {
 		}
 	}
 
-	private void setCurrentTableInfo() throws URISyntaxException {
-		lblTableName.setText(tableName);
-		TableInfoDao tableNameDao = new TableInfoDao(connInfo);
-		TableDescription tableInfo = tableNameDao.getTableDescription(tableName);
-		lblRecordCount.setText(String.valueOf(tableInfo.itemCount().longValue()));
-		lblTableSize.setText(String.valueOf(tableInfo.tableSizeBytes().longValue()));
-		currentTableInfo = tableInfo;
-		setCurrentTableInfoToComponent();
-		tableResultList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
-		tableResultList.getSelectionModel().setCellSelectionEnabled(isCellSelectMode);
-	}
-
 	/*
-	 * event handler
+	 * public action
 	 */
-
-	@FXML
-	protected void actLoad(ActionEvent ev) throws Exception {
+	public void actLoad(ActionEvent ev) throws Exception {
 		final DynamoDbErrorInfo errInfo = new DynamoDbErrorInfo();
 		Task<Boolean> task = new Task<Boolean>() {
 			@Override
 			public Boolean call() throws Exception {
 				try {
-					DynamoDbResult result = null;
 					if (radioLoadPartiQL.isSelected()) {
 						PartiQLDao partqlDao = new PartiQLDao(connInfo);
-						result = partqlDao.getResult(currentTableInfo, txtAreaPartiql.getText());
+						dynamoDbResult = partqlDao.getResult(currentTableInfo, txtAreaPartiql.getText());
 					} else {
-						String condColumn = txtFldColumnName.getText();
 						String condValue = txtFldCondValue.getText();
-						if (!StringUtils.isEmpty(condColumn) && !StringUtils.isEmpty(condValue)) {
-							QueryDao dao = new QueryDao(connInfo);
-							List<DynamoDbCondition> conditionList = new ArrayList<>();
-							DynamoDbCondition cond = new DynamoDbCondition();
-							cond.setColumnName(condColumn);
-							cond.setConditionType(DynamoDbConditionType.EQUAL);
-							cond.setValue(condValue);
-							conditionList.add(cond);
-							result = dao.getResult(currentTableInfo, DynamoDbConditionJoinType.AND, conditionList);
+						if (!StringUtils.isEmpty(condValue)) {
+							doQueryDao(condValue);
 						} else {
 							ScanDao dao = new ScanDao(connInfo);
-							result = dao.getResult(currentTableInfo);
+							dynamoDbResult = dao.getResult(currentTableInfo);
 						}
 					}
-					dynamoDbResult = result;
 				} catch (Exception e) {
 					errInfo.setMessage(e.getMessage());
 					e.printStackTrace();
@@ -223,6 +192,116 @@ public class DynamoDbTable extends AnchorPane {
 			dialog.hide();
 		});
 		new Thread(task).start();
+	}
+
+	public void actAdd(ActionEvent ev) throws Exception {
+		Map<String, AttributeValue> rec = new HashMap<>();
+		if (dynamoDbResult != null && dynamoDbResult.getRecordCount() > 0) {
+			for (int idx = 0; idx < dynamoDbResult.getColumnCount(); idx++) {
+				DynamoDbColumn dbCol = dynamoDbResult.getDynamoDbColumn(idx);
+				rec.put(dbCol.getColumnName(), dbCol.getColumnType().getInitValue());
+			}
+		} else {
+			for (DynamoDbColumn dbCol : DynamoDbUtils.getSortedDynamoDbColumnList(currentTableInfo)) {
+				rec.put(dbCol.getColumnName(), dbCol.getColumnType().getInitValue());
+			}
+		}
+		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.ADD);
+		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
+		if (newRecWk.isPresent()) {
+			Map<String, AttributeValue> newRec = newRecWk.get();
+			PutItemDao dao = new PutItemDao(connInfo);
+			dao.putItem(currentTableInfo, newRec);
+
+			dynamoDbResult.addRecord(newRec);
+			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
+			tableResultList.getItems().add(tableRec);
+		}
+	}
+
+	public void actUpdate(ActionEvent ev) throws URISyntaxException {
+		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
+		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
+		if (posList.size() == 0) {
+			return;
+		}
+		int row = posList.get(0).getValue();
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+
+		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.UPD);
+		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
+		if (newRecWk.isPresent()) {
+			Map<String, AttributeValue> newRec = newRecWk.get();
+			PutItemDao dao = new PutItemDao(connInfo);
+			dao.putItem(currentTableInfo, newRec);
+
+			dynamoDbResult.updateRecord(row, newRec);
+			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
+			tableResultList.getItems().set(row, tableRec);
+		}
+	}
+
+	public void actDel(ActionEvent ev) throws Exception {
+		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
+		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
+		if (posList.size() == 0) {
+			return;
+		}
+		int row = posList.get(0).getValue();
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+
+		StringBuilder sb = new StringBuilder();
+		sb.append("Table name = ").append(currentTableInfo.tableName()).append("\r\n");
+		sb.append("Partition key ").append(getPartitionKeyName()).append(" = ") //
+				.append(rec.get(partitionKeyName).toString()).append("\r\n");
+		if (hasSortKey) {
+			sb.append("Sort key ").append(getSortKeyName()) //
+					.append(" = ").append(rec.get(sortKeyName).toString()).append("\r\n");
+		}
+
+		Alert confirmDialog = new Alert(AlertType.CONFIRMATION);
+		confirmDialog.setHeaderText("Delete Information");
+		// confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+		// confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
+		confirmDialog.setContentText(sb.toString());
+		ButtonType retType = confirmDialog.showAndWait().get();
+		if (retType == ButtonType.OK) {
+			DeleteItemDao dao = new DeleteItemDao(connInfo);
+			dao.deleteItem(currentTableInfo, rec);
+
+			dynamoDbResult.removeRecord(row);
+			tableResultList.getItems().remove(row);
+		}
+	}
+
+	public TableDescription getTableInfo() {
+		return currentTableInfo;
+	}
+
+	public String getPartitionKeyName() {
+		return partitionKeyName;
+	}
+
+	public boolean hasSortKey() {
+		return hasSortKey;
+	}
+
+	public String getSortKeyName() {
+		return sortKeyName;
+	}
+
+	/*
+	 * event handler
+	 */
+
+	@FXML
+	protected void actAddPartitionKeyCond(ActionEvent ev) {
+		setDefaultPartiQL(PartiQLBaseCondType.PARTITION);
+	}
+
+	@FXML
+	protected void actAddAllKeyCond(ActionEvent ev) {
+		setDefaultPartiQL(PartiQLBaseCondType.PARTITION_AND_SORT);
 	}
 
 	@FXML
@@ -255,7 +334,7 @@ public class DynamoDbTable extends AnchorPane {
 	protected void onMouseClicked(MouseEvent ev) {
 		try {
 			if (ev.getClickCount() >= 2) {
-				actShowInputDialog();
+				actUpdate(null);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
@@ -278,33 +357,21 @@ public class DynamoDbTable extends AnchorPane {
 	@FXML
 	protected void onLoadTypeChange(Event ev) {
 		txtAreaPartiql.setDisable(!radioLoadPartiQL.isSelected());
-		txtFldColumnName.setDisable(radioLoadPartiQL.isSelected());
 		txtFldCondValue.setDisable(radioLoadPartiQL.isSelected());
 	}
 	/*
 	 * normal methods
 	 */
 
-	private void actShowInputDialog() throws URISyntaxException {
-		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
-		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
-		if (posList.size() == 0) {
-			return;
-		}
-		int row = posList.get(0).getValue();
-		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+	private void setCurrentTableInfo() throws URISyntaxException {
+		TableInfoDao tableNameDao = new TableInfoDao(connInfo);
+		TableDescription tableInfo = tableNameDao.getTableDescription(tableName);
+		currentTableInfo = tableInfo;
 
-		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec);
-		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
-		if (newRecWk.isPresent()) {
-			Map<String, AttributeValue> newRec = newRecWk.get();
-			PutItemDao dao = new PutItemDao(connInfo);
-			dao.putItem(currentTableInfo, newRec);
-
-			dynamoDbResult.updateRecord(row, newRec);
-			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
-			tableResultList.getItems().set(row, tableRec);
-		}
+		setCurrentTableInfoVariable();
+		setDefaultPartiQL(PartiQLBaseCondType.NONE);
+		tableResultList.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
+		tableResultList.getSelectionModel().setCellSelectionEnabled(isCellSelectMode);
 	}
 
 	private String getWholeTableSelectedCellString(TableViewSelectionModel<ObservableList<String>> selectedModel) {
@@ -378,27 +445,38 @@ public class DynamoDbTable extends AnchorPane {
 		return oneRowStrSb.toString();
 	}
 
-	private void setCurrentTableInfoToComponent() {
-		txtFldColumnName.setText("");
-		lblPartitionKey.setText("-");
-		lblSortKey.setText("-");
-
+	private void setCurrentTableInfoVariable() {
 		List<KeySchemaElement> keyInfos = currentTableInfo.keySchema();
-		String defPartQL = String.format("select * from \"%1$s\" where ", tableName);
-		StringBuilder sbPartiQL = new StringBuilder(defPartQL);
-		boolean hasSortKey = false;
 		for (KeySchemaElement k : keyInfos) {
 			if (k.keyType() == KeyType.HASH) {
-				txtFldColumnName.setText(k.attributeName());
-				lblPartitionKey.setText(k.attributeName());
+				partitionKeyName = k.attributeName();
 			} else if (k.keyType() == KeyType.RANGE) {
-				lblSortKey.setText(k.attributeName());
+				sortKeyName = k.attributeName();
 				hasSortKey = true;
 			}
 		}
-		sbPartiQL.append(lblPartitionKey.getText()).append(" = ?");
-		if (hasSortKey) {
-			sbPartiQL.append(" and ").append(lblSortKey.getText()).append(" = ?");
+	}
+
+	private void doQueryDao(String condValue) throws URISyntaxException {
+		QueryDao dao = new QueryDao(connInfo);
+		List<DynamoDbCondition> conditionList = new ArrayList<>();
+		DynamoDbCondition cond = new DynamoDbCondition();
+		cond.setColumnName(partitionKeyName);
+		cond.setConditionType(DynamoDbConditionType.EQUAL);
+		cond.setValue(condValue);
+		conditionList.add(cond);
+		dynamoDbResult = dao.getResult(currentTableInfo, DynamoDbConditionJoinType.AND, conditionList);
+	}
+
+	private void setDefaultPartiQL(PartiQLBaseCondType type) {
+		String defPartQL = String.format("select * from \"%1$s\"", tableName);
+		StringBuilder sbPartiQL = new StringBuilder(defPartQL);
+		if (type != PartiQLBaseCondType.NONE) {
+			sbPartiQL.append(" where ").append(partitionKeyName).append(" = ?");
+			if (hasSortKey && type == PartiQLBaseCondType.PARTITION_AND_SORT) {
+				sbPartiQL.append(" and ").append(sortKeyName).append(" = ?");
+			}
+
 		}
 		txtAreaPartiql.setText(sbPartiQL.toString());
 	}
@@ -422,5 +500,9 @@ public class DynamoDbTable extends AnchorPane {
 		TableColumn<ObservableList<String>, String> dataCol = new TableColumn<>(columnName);
 		dataCol.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(finalColIdx)));
 		return dataCol;
+	}
+
+	private enum PartiQLBaseCondType {
+		NONE, PARTITION, PARTITION_AND_SORT
 	}
 }

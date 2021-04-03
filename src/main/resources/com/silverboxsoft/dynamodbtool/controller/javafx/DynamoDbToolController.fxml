@@ -47,6 +47,8 @@
               <items>
                 <MenuItem mnemonicParsing="false" onAction="#actCloseActiveTab" text="Closee active tab" />
                   <MenuItem mnemonicParsing="false" onAction="#actCloseAllNonActiveTab" text="Close all non active tab" />
+                  <SeparatorMenuItem mnemonicParsing="false" />
+                  <MenuItem mnemonicParsing="false" onAction="#actShowTableInfo" text="Table info" />
               </items>
             </Menu>
         <Menu mnemonicParsing="false" text="Help">
@@ -56,6 +58,13 @@
         </Menu>
       </menus>
     </MenuBar>
+      <ToolBar prefHeight="40.0" prefWidth="200.0">
+        <items>
+          <Button fx:id="btnLoad" mnemonicParsing="false" onAction="#actLoad" text="Load" />
+            <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#actAdd" text="Add" />
+            <Button fx:id="btnDel" mnemonicParsing="false" onAction="#actDel" text="Delete" />
+        </items>
+      </ToolBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="493.0" prefWidth="853.0" VBox.vgrow="ALWAYS">
       <children>
             <SplitPane dividerPositions="0.26011560693641617" layoutX="34.0" layoutY="52.0" prefHeight="339.0" prefWidth="724.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">

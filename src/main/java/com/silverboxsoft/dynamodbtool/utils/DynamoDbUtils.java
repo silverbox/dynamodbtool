@@ -195,7 +195,7 @@ public class DynamoDbUtils {
 		return sb.toString();
 	}
 
-	public static List<DynamoDbColumn> getSortedSchemeAttrNameList(TableDescription tableInfo) {
+	public static List<DynamoDbColumn> getSortedDynamoDbColumnList(TableDescription tableInfo) {
 		KeySchemaElement partitionKeyElem = null;
 		KeySchemaElement sortKeyElem = null;
 		List<DynamoDbColumn> columnList = new ArrayList<>();
