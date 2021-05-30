@@ -5,9 +5,11 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbCondition;
@@ -23,6 +25,7 @@ import com.silverboxsoft.dynamodbtool.dao.PutItemDao;
 import com.silverboxsoft.dynamodbtool.dao.QueryDao;
 import com.silverboxsoft.dynamodbtool.dao.ScanDao;
 import com.silverboxsoft.dynamodbtool.dao.TableInfoDao;
+import com.silverboxsoft.dynamodbtool.types.CopyModeType;
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils;
 
 import javafx.beans.property.ReadOnlyObjectWrapper;
@@ -99,6 +102,12 @@ public class DynamoDbTable extends AnchorPane {
 
 	@FXML
 	MenuItem menuItemTableResultListCopy;
+
+	@FXML
+	MenuItem menuItemTableResultListCopyWithQuotation;
+
+	@FXML
+	MenuItem menuItemTableResultListCopyInJsonFormat;
 
 	@FXML
 	MenuItem menuItemTableResultListCellSelectMode;
@@ -300,21 +309,7 @@ public class DynamoDbTable extends AnchorPane {
 
 	@FXML
 	protected void actTableLineCopyToClipBoard(ActionEvent ev) {
-		final ClipboardContent content = new ClipboardContent();
-		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
-		if (selectedModel.getSelectedItems().size() == 0) {
-			return;
-		}
-		String targetStr = null;
-		if (tableResultList.getSelectionModel().isCellSelectionEnabled()) {
-			targetStr = getWholeTableSelectedCellString(selectedModel);
-		} else {
-			targetStr = getWholeTableSelectedRowString(selectedModel);
-		}
-		if (targetStr != null) {
-			content.putString(targetStr);
-			Clipboard.getSystemClipboard().setContent(content);
-		}
+		copyToClipBoardSub(CopyModeType.TAB);
 	}
 
 	@FXML
@@ -322,6 +317,16 @@ public class DynamoDbTable extends AnchorPane {
 		if (ev.isControlDown() && ev.getEventType() == KeyEvent.KEY_PRESSED && ev.getCode() == KeyCode.C) {
 			actTableLineCopyToClipBoard(null);
 		}
+	}
+
+	@FXML
+	protected void actTableLineCopyToClipBoardQuatation(ActionEvent ev) {
+		copyToClipBoardSub(CopyModeType.QUATATION);
+	}
+
+	@FXML
+	protected void actTableLineCopyToClipBoardJson(ActionEvent ev) {
+		copyToClipBoardSub(CopyModeType.JSON);
 	}
 
 	@FXML
@@ -368,25 +373,159 @@ public class DynamoDbTable extends AnchorPane {
 		tableResultList.getSelectionModel().setCellSelectionEnabled(isCellSelectMode);
 	}
 
-	private String getWholeTableSelectedCellString(TableViewSelectionModel<ObservableList<String>> selectedModel) {
+	private void copyToClipBoardSub(CopyModeType type) {
+		final ClipboardContent content = new ClipboardContent();
+		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
+		if (selectedModel.getSelectedItems().size() == 0) {
+			return;
+		}
+		String targetStr = null;
+		if (tableResultList.getSelectionModel().isCellSelectionEnabled()) {
+			targetStr = getWholeTableSelectedCellString(selectedModel, type);
+		} else {
+			targetStr = getWholeTableSelectedRowString(selectedModel, type);
+		}
+		if (targetStr != null) {
+			content.putString(targetStr);
+			Clipboard.getSystemClipboard().setContent(content);
+		}
+	}
+
+	private String getWholeTableSelectedCellString(TableViewSelectionModel<ObservableList<String>> selectedModel,
+			CopyModeType type) {
 		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
 
 		StringBuilder selectedRowStrSb = new StringBuilder();
 		int oldRow = posList.get(0).getValue();
 		for (Pair<Integer, Integer> position : posList) {
+			int newCol = position.getKey();
 			int newRow = position.getValue();
-			String cellStr = tableResultList.getItems().get(newRow).get(position.getKey());
-			cellStr = cellStr == null ? "" : cellStr;
+			String colName = dynamoDbResult.getDynamoDbColumn(newCol).getColumnName();
+			String wkCellStr = tableResultList.getItems().get(newRow).get(position.getKey());
+			String cellStr = escapedItemStr(colName, wkCellStr, type);
 			if (oldRow != newRow) {
-				selectedRowStrSb.append("\n").append(cellStr);
+				selectedRowStrSb.append(lineWrapStr(type, false));
+				selectedRowStrSb.append(lineSepStr(type));
+				selectedRowStrSb.append(lineWrapStr(type, true));
+				selectedRowStrSb.append(cellStr);
 			} else if (selectedRowStrSb.length() == 0) {
+				selectedRowStrSb.append(lineWrapStr(type, true));
 				selectedRowStrSb.append(cellStr);
 			} else {
-				selectedRowStrSb.append("\t").append(cellStr);
+				selectedRowStrSb.append(itemSepStr(type)).append(cellStr);
 			}
 			oldRow = position.getValue();
 		}
+		if (selectedRowStrSb.length() > 0) {
+			selectedRowStrSb.append(lineWrapStr(type, false));
+		}
+		selectedRowStrSb.insert(0, allLineWrapStr(type, true));
+		selectedRowStrSb.append(allLineWrapStr(type, false));
 		return selectedRowStrSb.toString();
+	}
+
+	private String getWholeTableSelectedRowString(TableViewSelectionModel<ObservableList<String>> selectedModel,
+			CopyModeType type) {
+		ObservableList<ObservableList<String>> selectedRecords = selectedModel.getSelectedItems();
+		if (selectedRecords.size() == 0) {
+			return null;
+		}
+
+		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
+		Set<Integer> dupCheckSet = new HashSet<Integer>();
+		List<String> colNameList = new ArrayList<String>();
+		for (Pair<Integer, Integer> posInfo : posList) {
+			Integer colPos = posInfo.getKey();
+			if (!dupCheckSet.contains(colPos)) {
+				String colName = dynamoDbResult.getDynamoDbColumn(colPos.intValue()).getColumnName();
+				colNameList.add(colName);
+			}
+			dupCheckSet.add(colPos);
+		}
+
+		StringBuilder selectedRowStrSb = new StringBuilder();
+		for (ObservableList<String> record : selectedRecords) {
+			if (selectedRowStrSb.length() > 0) {
+				selectedRowStrSb.append(lineSepStr(type));
+			}
+			selectedRowStrSb.append(lineWrapStr(type, true));
+			selectedRowStrSb.append(getOneRowString(colNameList, record, type));
+			selectedRowStrSb.append(lineWrapStr(type, false));
+		}
+		return selectedRowStrSb.toString();
+	}
+
+	private String getOneRowString(List<String> colNameList, ObservableList<String> record, CopyModeType type) {
+		StringBuilder oneRowStrSb = new StringBuilder();
+		for (int colIdx = 0; colIdx < record.size(); colIdx++) {
+			String item = record.get(colIdx);
+			String wkItemStr = item == null ? "" : record.get(colIdx);
+			if (oneRowStrSb.length() > 0) {
+				oneRowStrSb.append(itemSepStr(type));
+			}
+			oneRowStrSb.append(escapedItemStr(colNameList.get(colIdx), wkItemStr, type));
+		}
+		return oneRowStrSb.toString();
+	}
+
+	private String allLineWrapStr(CopyModeType type, boolean isBegin) {
+		if (type == CopyModeType.JSON) {
+			if (isBegin) {
+				return "[";
+			} else {
+				return "]";
+			}
+		}
+		return "";
+	}
+
+	private String lineWrapStr(CopyModeType type, boolean isBegin) {
+		if (type == CopyModeType.JSON) {
+			if (isBegin) {
+				return "{";
+			} else {
+				return "}";
+			}
+		}
+		return "";
+	}
+
+	private String lineSepStr(CopyModeType type) {
+		if (type == CopyModeType.JSON) {
+			return ",";
+		} else if (type == CopyModeType.QUATATION) {
+			return "\n";
+		} else {
+			return "\n";
+		}
+	}
+
+	private String itemSepStr(CopyModeType type) {
+		if (type == CopyModeType.JSON) {
+			return ",";
+		} else if (type == CopyModeType.QUATATION) {
+			return ",";
+		} else {
+			return "\t";
+		}
+	}
+
+	private String escapedItemStr(String colName, String orgStr, CopyModeType type) {
+		StringBuilder retStrSb = new StringBuilder();
+		if (type == CopyModeType.JSON) {
+			retStrSb.append("\"");
+			retStrSb.append(colName);
+			retStrSb.append("\":\"");
+			retStrSb.append(orgStr.replaceAll("\"", "\\\""));
+			retStrSb.append("\"");
+		} else if (type == CopyModeType.QUATATION) {
+			retStrSb.append("'");
+			retStrSb.append(orgStr.replaceAll("'", "''"));
+			retStrSb.append("'");
+		} else {
+			retStrSb.append(orgStr);
+		}
+		return retStrSb.toString();
 	}
 
 	private int getCurrentRow() {
@@ -433,33 +572,6 @@ public class DynamoDbTable extends AnchorPane {
 			}
 		});
 		return posList;
-	}
-
-	private String getWholeTableSelectedRowString(TableViewSelectionModel<ObservableList<String>> selectedModel) {
-		ObservableList<ObservableList<String>> selectedRecords = selectedModel.getSelectedItems();
-		if (selectedRecords.size() == 0) {
-			return null;
-		}
-
-		StringBuilder selectedRowStrSb = new StringBuilder();
-		for (ObservableList<String> record : selectedRecords) {
-			if (selectedRowStrSb.length() > 0) {
-				selectedRowStrSb.append("\n");
-			}
-			selectedRowStrSb.append(getOneRowString(record));
-		}
-		return selectedRowStrSb.toString();
-	}
-
-	private String getOneRowString(ObservableList<String> record) {
-		StringBuilder oneRowStrSb = new StringBuilder();
-		for (String item : record) {
-			if (oneRowStrSb.length() > 0) {
-				oneRowStrSb.append("\t");
-			}
-			oneRowStrSb.append(item == null ? "" : item);
-		}
-		return oneRowStrSb.toString();
 	}
 
 	private void setCurrentTableInfoVariable() {
