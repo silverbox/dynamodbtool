@@ -18,6 +18,7 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionType;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbErrorInfo;
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult;
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbViewRecord;
 import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog;
 import com.silverboxsoft.dynamodbtool.dao.DeleteItemDao;
 import com.silverboxsoft.dynamodbtool.dao.PartiQLDao;
@@ -95,7 +96,7 @@ public class DynamoDbTable extends AnchorPane {
 	 * data area
 	 */
 	@FXML
-	TableView<ObservableList<String>> tableResultList;
+	TableView<DynamoDbViewRecord> tableResultList;
 
 	@FXML
 	ContextMenu contextMenuTable;
@@ -219,62 +220,31 @@ public class DynamoDbTable extends AnchorPane {
 	}
 
 	public void actCopyAdd(ActionEvent ev) throws Exception {
-		int row = getCurrentRow();
-		if (row < 0) {
+		int dataIndex = getCurrentDataIndex();
+		if (dataIndex < 0) {
 			return;
 		}
-		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(dataIndex);
 		doAdd(rec);
 	}
 
 	public void actUpdate(ActionEvent ev) throws URISyntaxException {
-		int row = getCurrentRow();
-		if (row < 0) {
+		int dataIndex = getCurrentDataIndex();
+		if (dataIndex < 0) {
 			return;
 		}
-		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
-		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.UPD);
-		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
-		if (newRecWk.isPresent()) {
-			Map<String, AttributeValue> newRec = newRecWk.get();
-			PutItemDao dao = new PutItemDao(connInfo);
-			dao.putItem(currentTableInfo, newRec);
-
-			dynamoDbResult.updateRecord(row, newRec);
-			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
-			tableResultList.getItems().set(row, tableRec);
-		}
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(dataIndex);
+		doUpdate(dataIndex, rec);
 	}
 
 	public void actDel(ActionEvent ev) throws Exception {
-		int row = getCurrentRow();
-		if (row < 0) {
+		int dataIndex = getCurrentDataIndex();
+		if (dataIndex < 0) {
 			return;
 		}
-		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(row);
+		Map<String, AttributeValue> rec = dynamoDbResult.getRawResItems().get(dataIndex);
 
-		StringBuilder sb = new StringBuilder();
-		sb.append("Table name = ").append(currentTableInfo.tableName()).append("\r\n");
-		sb.append("Partition key ").append(getPartitionKeyName()).append(" = ") //
-				.append(rec.get(partitionKeyName).toString()).append("\r\n");
-		if (hasSortKey) {
-			sb.append("Sort key ").append(getSortKeyName()) //
-					.append(" = ").append(rec.get(sortKeyName).toString()).append("\r\n");
-		}
-
-		Alert confirmDialog = new Alert(AlertType.CONFIRMATION);
-		confirmDialog.setHeaderText("Delete Information");
-		// confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-		// confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
-		confirmDialog.setContentText(sb.toString());
-		ButtonType retType = confirmDialog.showAndWait().get();
-		if (retType == ButtonType.OK) {
-			DeleteItemDao dao = new DeleteItemDao(connInfo);
-			dao.deleteItem(currentTableInfo, rec);
-
-			dynamoDbResult.removeRecord(row);
-			tableResultList.getItems().remove(row);
-		}
+		doDelete(dataIndex, rec);
 	}
 
 	public TableDescription getTableInfo() {
@@ -375,7 +345,7 @@ public class DynamoDbTable extends AnchorPane {
 
 	private void copyToClipBoardSub(CopyModeType type) {
 		final ClipboardContent content = new ClipboardContent();
-		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
+		TableViewSelectionModel<DynamoDbViewRecord> selectedModel = tableResultList.getSelectionModel();
 		if (selectedModel.getSelectedItems().size() == 0) {
 			return;
 		}
@@ -391,19 +361,21 @@ public class DynamoDbTable extends AnchorPane {
 		}
 	}
 
-	private String getWholeTableSelectedCellString(TableViewSelectionModel<ObservableList<String>> selectedModel,
+	private String getWholeTableSelectedCellString(TableViewSelectionModel<DynamoDbViewRecord> selectedModel,
 			CopyModeType type) {
 		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
 
 		StringBuilder selectedRowStrSb = new StringBuilder();
 		int oldRow = posList.get(0).getValue();
 		for (Pair<Integer, Integer> position : posList) {
-			int newCol = position.getKey();
-			int newRow = position.getValue();
-			String colName = dynamoDbResult.getDynamoDbColumn(newCol).getColumnName();
-			String wkCellStr = tableResultList.getItems().get(newRow).get(position.getKey());
+			int wkCol = position.getKey();
+			int wkRow = position.getValue();
+
+			String colName = tableResultList.getColumns().get(wkCol).getId();
+			int wkColIdx = dynamoDbResult.getColumnIndexByName(colName);
+			String wkCellStr = tableResultList.getItems().get(wkRow).getData().get(wkColIdx);
 			String cellStr = escapedItemStr(colName, wkCellStr, type);
-			if (oldRow != newRow) {
+			if (oldRow != wkRow) {
 				selectedRowStrSb.append(lineWrapStr(type, false));
 				selectedRowStrSb.append(lineSepStr(type));
 				selectedRowStrSb.append(lineWrapStr(type, true));
@@ -424,9 +396,9 @@ public class DynamoDbTable extends AnchorPane {
 		return selectedRowStrSb.toString();
 	}
 
-	private String getWholeTableSelectedRowString(TableViewSelectionModel<ObservableList<String>> selectedModel,
+	private String getWholeTableSelectedRowString(TableViewSelectionModel<DynamoDbViewRecord> selectedModel,
 			CopyModeType type) {
-		ObservableList<ObservableList<String>> selectedRecords = selectedModel.getSelectedItems();
+		ObservableList<DynamoDbViewRecord> selectedRecords = selectedModel.getSelectedItems();
 		if (selectedRecords.size() == 0) {
 			return null;
 		}
@@ -444,7 +416,7 @@ public class DynamoDbTable extends AnchorPane {
 		}
 
 		StringBuilder selectedRowStrSb = new StringBuilder();
-		for (ObservableList<String> record : selectedRecords) {
+		for (DynamoDbViewRecord record : selectedRecords) {
 			if (selectedRowStrSb.length() > 0) {
 				selectedRowStrSb.append(lineSepStr(type));
 			}
@@ -455,11 +427,11 @@ public class DynamoDbTable extends AnchorPane {
 		return selectedRowStrSb.toString();
 	}
 
-	private String getOneRowString(List<String> colNameList, ObservableList<String> record, CopyModeType type) {
+	private String getOneRowString(List<String> colNameList, DynamoDbViewRecord record, CopyModeType type) {
 		StringBuilder oneRowStrSb = new StringBuilder();
-		for (int colIdx = 0; colIdx < record.size(); colIdx++) {
-			String item = record.get(colIdx);
-			String wkItemStr = item == null ? "" : record.get(colIdx);
+		for (int colIdx = 0; colIdx < record.getData().size(); colIdx++) {
+			String item = record.getData().get(colIdx);
+			String wkItemStr = item == null ? "" : record.getData().get(colIdx);
 			if (oneRowStrSb.length() > 0) {
 				oneRowStrSb.append(itemSepStr(type));
 			}
@@ -528,13 +500,13 @@ public class DynamoDbTable extends AnchorPane {
 		return retStrSb.toString();
 	}
 
-	private int getCurrentRow() {
-		TableViewSelectionModel<ObservableList<String>> selectedModel = tableResultList.getSelectionModel();
-		List<Pair<Integer, Integer>> posList = getPositionList(selectedModel);
-		if (posList.size() == 0) {
+	private int getCurrentDataIndex() {
+		TableViewSelectionModel<DynamoDbViewRecord> selectedModel = tableResultList.getSelectionModel();
+		DynamoDbViewRecord selRec = selectedModel.getSelectedItem();
+		if (selRec == null) {
 			return -1;
 		}
-		return posList.get(0).getValue();
+		return selRec.getIndex();
 	}
 
 	private void doAdd(Map<String, AttributeValue> rec) throws URISyntaxException {
@@ -545,20 +517,57 @@ public class DynamoDbTable extends AnchorPane {
 			PutItemDao dao = new PutItemDao(connInfo);
 			dao.putItem(currentTableInfo, newRec);
 
-			dynamoDbResult.addRecord(newRec);
-			ObservableList<String> tableRec = dynamoDbResult.getOneTableRecord(newRec);
-			tableResultList.getItems().add(tableRec);
+			DynamoDbViewRecord viewRec = dynamoDbResult.addRecord(newRec);
+			tableResultList.getItems().add(viewRec);
+		}
+	}
+
+	private void doUpdate(int dataIndex, Map<String, AttributeValue> rec) throws URISyntaxException {
+		DynamoDbRecordInputDialog dialog = new DynamoDbRecordInputDialog(currentTableInfo, rec, DynamoDbEditMode.UPD);
+		Optional<Map<String, AttributeValue>> newRecWk = dialog.showAndWait();
+		if (newRecWk.isPresent()) {
+			Map<String, AttributeValue> newRec = newRecWk.get();
+			PutItemDao dao = new PutItemDao(connInfo);
+			dao.putItem(currentTableInfo, newRec);
+
+			DynamoDbViewRecord tableRec = dynamoDbResult.updateRecord(dataIndex, newRec);
+			tableResultList.getItems().set(dataIndex, tableRec);
+		}
+	}
+
+	private void doDelete(int dataIndex, Map<String, AttributeValue> rec) throws URISyntaxException {
+		StringBuilder sb = new StringBuilder();
+		sb.append("Table name = ").append(currentTableInfo.tableName()).append("\r\n");
+		sb.append("Partition key ").append(getPartitionKeyName()).append(" = ") //
+				.append(rec.get(partitionKeyName).toString()).append("\r\n");
+		if (hasSortKey) {
+			sb.append("Sort key ").append(getSortKeyName()) //
+					.append(" = ").append(rec.get(sortKeyName).toString()).append("\r\n");
+		}
+
+		Alert confirmDialog = new Alert(AlertType.CONFIRMATION);
+		confirmDialog.setHeaderText("Delete Information");
+		// confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
+		// confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
+		confirmDialog.setContentText(sb.toString());
+		ButtonType retType = confirmDialog.showAndWait().get();
+		if (retType == ButtonType.OK) {
+			DeleteItemDao dao = new DeleteItemDao(connInfo);
+			dao.deleteItem(currentTableInfo, rec);
+
+			dynamoDbResult.removeRecord(dataIndex);
+			tableResultList.getItems().remove(dataIndex);
 		}
 	}
 
 	@SuppressWarnings("unchecked")
 	private List<Pair<Integer, Integer>> getPositionList(
-			TableViewSelectionModel<ObservableList<String>> selectedModel) {
+			TableViewSelectionModel<DynamoDbViewRecord> selectedModel) {
 		@SuppressWarnings("rawtypes")
 		ObservableList<TablePosition> selPosList = selectedModel.getSelectedCells();
 
 		List<Pair<Integer, Integer>> posList = new ArrayList<>();
-		for (TablePosition<ObservableList<String>, String> position : selPosList) {
+		for (TablePosition<DynamoDbViewRecord, String> position : selPosList) {
 			posList.add(new Pair<Integer, Integer>(position.getColumn(), position.getRow()));
 		}
 		posList.sort(new Comparator<Pair<Integer, Integer>>() {
@@ -616,7 +625,7 @@ public class DynamoDbTable extends AnchorPane {
 		tableResultList.getColumns().clear();
 		for (int colIdx = 0; colIdx < result.getColumnCount(); colIdx++) {
 			String columnName = result.getDynamoDbColumn(colIdx).getColumnName();
-			TableColumn<ObservableList<String>, String> dataCol = getTableColumn(columnName, colIdx);
+			TableColumn<DynamoDbViewRecord, String> dataCol = getTableColumn(columnName, colIdx);
 			dataCol.setCellFactory(TextFieldTableCell.forTableColumn());
 			dataCol.setMaxWidth(TBL_COL_MAX_WIDTH);
 			tableResultList.getColumns().add(dataCol);
@@ -625,9 +634,11 @@ public class DynamoDbTable extends AnchorPane {
 		tableResultList.getItems().addAll(result.getResultItems());
 	}
 
-	private TableColumn<ObservableList<String>, String> getTableColumn(String columnName, final int finalColIdx) {
-		TableColumn<ObservableList<String>, String> dataCol = new TableColumn<>(columnName);
-		dataCol.setCellValueFactory(param -> new ReadOnlyObjectWrapper<>(param.getValue().get(finalColIdx)));
+	private TableColumn<DynamoDbViewRecord, String> getTableColumn(String columnName, final int finalColIdx) {
+		TableColumn<DynamoDbViewRecord, String> dataCol = new TableColumn<>(columnName);
+		dataCol.setCellValueFactory(
+				param -> new ReadOnlyObjectWrapper<>(param.getValue().getData().get(finalColIdx)));
+		dataCol.setId(columnName);
 		return dataCol;
 	}
 

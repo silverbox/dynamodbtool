@@ -18,7 +18,7 @@ public class DynamoDbResult {
 
 	private List<DynamoDbColumn> columnList = new ArrayList<>();
 	private Map<String, Integer> colNameIndex = new HashMap<>();
-	private List<ObservableList<String>> resItems = new ArrayList<>();
+	private List<DynamoDbViewRecord> resItems = new ArrayList<>();
 	private List<Map<String, AttributeValue>> rawResItems = new ArrayList<>();
 
 	public DynamoDbResult(List<Map<String, AttributeValue>> items, TableDescription tableInfo) {
@@ -35,14 +35,11 @@ public class DynamoDbResult {
 
 	private void initilize(List<Map<String, AttributeValue>> items) {
 		for (Map<String, AttributeValue> resItem : items) {
-			this.rawResItems.add(resItem);
-
-			ObservableList<String> record = getOneTableRecord(resItem);
-			this.resItems.add(record);
+			addRecord(resItem);
 		}
 	}
 
-	public ObservableList<String> getOneTableRecord(Map<String, AttributeValue> resItem) {
+	public ObservableList<String> prepareOneTableRecord(Map<String, AttributeValue> resItem) {
 		ObservableList<String> record = FXCollections.observableArrayList();
 
 		// pick up data which attribute name is set.
@@ -69,7 +66,7 @@ public class DynamoDbResult {
 	}
 
 	private void fillNewColumn() {
-		this.resItems.stream().forEach(rec -> rec.add(DynamoDbUtils.NO_VALSTR));
+		this.resItems.stream().forEach(rec -> rec.getData().add(DynamoDbUtils.NO_VALSTR));
 	}
 
 	public int getColumnCount() {
@@ -80,7 +77,7 @@ public class DynamoDbResult {
 		return resItems.size();
 	}
 
-	public List<ObservableList<String>> getResultItems() {
+	public List<DynamoDbViewRecord> getResultItems() {
 		return resItems;
 	}
 
@@ -92,15 +89,33 @@ public class DynamoDbResult {
 		return columnList.get(index);
 	}
 
-	public void addRecord(Map<String, AttributeValue> newRec) {
-		rawResItems.add(newRec);
+	public DynamoDbViewRecord addRecord(Map<String, AttributeValue> newRec) {
+		this.rawResItems.add(newRec);
+
+		ObservableList<String> data = prepareOneTableRecord(newRec);
+		DynamoDbViewRecord record = DynamoDbViewRecord.builder().index(this.resItems.size()).data(data)
+				.build();
+		this.resItems.add(record);
+		return record;
 	}
 
-	public void updateRecord(int rowIndex, Map<String, AttributeValue> newRec) {
+	public DynamoDbViewRecord updateRecord(int rowIndex, Map<String, AttributeValue> newRec) {
 		rawResItems.set(rowIndex, newRec);
+		ObservableList<String> data = prepareOneTableRecord(newRec);
+		DynamoDbViewRecord record = resItems.get(rowIndex);
+		record.setData(data);
+		resItems.set(rowIndex, record);
+		return record;
 	}
 
 	public void removeRecord(int rowIndex) {
 		rawResItems.remove(rowIndex);
+	}
+
+	public Integer getColumnIndexByName(String colName) {
+		if (colNameIndex.containsKey(colName)) {
+			return colNameIndex.get(colName);
+		}
+		return -1;
 	}
 }
