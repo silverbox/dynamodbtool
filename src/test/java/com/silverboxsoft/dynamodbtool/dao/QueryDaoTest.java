@@ -39,21 +39,21 @@ public class QueryDaoTest extends TestCase {
 	 * Rigourous Test :-)
 	 */
 	public void testsGSIQuery() {
-		DynamoDbClient dbclient = DynamoDbClient.builder().region(Region.AP_NORTHEAST_1).build();
-
-		Map<String, Condition> keyConditions = new HashMap<String, Condition>();
-		keyConditions.put(
-				"col-string1",
-				Condition.builder()
-						.attributeValueList(AttributeValue.builder().s("string-attr").build())
-						.comparisonOperator(ComparisonOperator.EQ).build());
-		QueryRequest queryReq = QueryRequest.builder()
-				.tableName("attrbute_test")
-				.indexName("test-gsi")
-				.keyConditions(keyConditions).build();
-
-		QueryResponse response = dbclient.query(queryReq);
-		System.out.println(response);
+//		DynamoDbClient dbclient = DynamoDbClient.builder().region(Region.AP_NORTHEAST_1).build();
+//
+//		Map<String, Condition> keyConditions = new HashMap<String, Condition>();
+//		keyConditions.put(
+//				"col-string1",
+//				Condition.builder()
+//						.attributeValueList(AttributeValue.builder().s("string-attr").build())
+//						.comparisonOperator(ComparisonOperator.EQ).build());
+//		QueryRequest queryReq = QueryRequest.builder()
+//				.tableName("attrbute_test")
+//				.indexName("test-gsi")
+//				.keyConditions(keyConditions).build();
+//
+//		QueryResponse response = dbclient.query(queryReq);
+//		System.out.println(response);
 		assertTrue(true);
 	}
 }

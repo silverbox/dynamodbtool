@@ -37,14 +37,14 @@ public class PartiQLTest extends TestCase {
 	 * Rigourous Test :-)
 	 */
 	public void testsPartiQLQuery() {
-		String partiQLString = "select memo from account_kind_mst";
-		DynamoDbClient dbclient = DynamoDbClient.builder().region(Region.AP_NORTHEAST_1).build();
-		ExecuteStatementRequest executeStatementRequest = ExecuteStatementRequest.builder().statement(partiQLString)
-				.build();
-		ExecuteStatementResponse executeStatementResponse = dbclient.executeStatement(executeStatementRequest);
-		List<Map<String, AttributeValue>> items = executeStatementResponse.items();
-
-		System.out.println(items);
+//		String partiQLString = "select memo from account_kind_mst";
+//		DynamoDbClient dbclient = DynamoDbClient.builder().region(Region.AP_NORTHEAST_1).build();
+//		ExecuteStatementRequest executeStatementRequest = ExecuteStatementRequest.builder().statement(partiQLString)
+//				.build();
+//		ExecuteStatementResponse executeStatementResponse = dbclient.executeStatement(executeStatementRequest);
+//		List<Map<String, AttributeValue>> items = executeStatementResponse.items();
+//
+//		System.out.println(items);
 		assertTrue(true);
 	}
 }
