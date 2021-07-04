@@ -58,14 +58,6 @@
         </Menu>
       </menus>
     </MenuBar>
-      <ToolBar prefHeight="40.0" prefWidth="200.0">
-        <items>
-          <Button fx:id="btnLoad" mnemonicParsing="false" onAction="#actLoad" text="Load" />
-            <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#actAdd" text="Add" />
-            <Button fx:id="btnCopyAdd" mnemonicParsing="false" onAction="#actCopyAdd" text="Copy add" />
-            <Button fx:id="btnDel" mnemonicParsing="false" onAction="#actDel" text="Delete" />
-        </items>
-      </ToolBar>
     <AnchorPane maxHeight="-1.0" maxWidth="-1.0" prefHeight="493.0" prefWidth="853.0" VBox.vgrow="ALWAYS">
       <children>
             <SplitPane dividerPositions="0.26011560693641617" layoutX="34.0" layoutY="52.0" prefHeight="339.0" prefWidth="724.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
@@ -104,7 +96,27 @@
                         </VBox>
                      </children>
                   </AnchorPane>
-                  <TabPane fx:id="tabPaneTable" prefHeight="200.0" prefWidth="200.0" tabClosingPolicy="UNAVAILABLE" />
+                  <AnchorPane prefHeight="200.0" prefWidth="200.0">
+                     <children>
+                        <ToolBar prefHeight="40.0" prefWidth="637.0">
+                          <items>
+                            <Button fx:id="btnLoad" mnemonicParsing="false" onAction="#actLoad" text="Load" />
+                              <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#actAdd" text="Add" />
+                              <Button fx:id="btnCopyAdd" mnemonicParsing="false" onAction="#actCopyAdd" text="Copy add" />
+                              <Button fx:id="btnDel" mnemonicParsing="false" onAction="#actDel" text="Delete" />
+                          </items>
+                        </ToolBar>
+                        <AnchorPane layoutY="40.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="509.0" prefWidth="637.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0">
+                           <children>
+                              <TabPane fx:id="tabPaneTable" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="509.0" prefWidth="637.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                                 <opaqueInsets>
+                                    <Insets />
+                                 </opaqueInsets>
+                              </TabPane>
+                           </children>
+                        </AnchorPane>
+                     </children>
+                  </AnchorPane>
               </items>
             </SplitPane>
       </children>
