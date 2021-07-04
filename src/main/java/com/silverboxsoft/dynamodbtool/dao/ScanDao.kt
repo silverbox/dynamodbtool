@@ -12,16 +12,16 @@ import software.amazon.awssdk.services.dynamodb.model.ScanRequest
  *
  * @author tanakaeiji
  */
-class ScanDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class ScanDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
     fun getResult(tableInfo: TableDescription?): DynamoDbResult {
         val tableName = tableInfo!!.tableName()
         val ddb = dbClient
         return try {
             val scanRequest = ScanRequest.builder().tableName(tableName).build()
-            DynamoDbResult(ddb!!.scan(scanRequest).items(), tableInfo)
+            DynamoDbResult(ddb.scan(scanRequest).items(), tableInfo)
         } finally {
-            ddb!!.close()
+            ddb.close()
         }
     }
 }

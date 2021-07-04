@@ -11,14 +11,14 @@ import javafx.scene.control.*
 import software.amazon.awssdk.services.dynamodb.model.*
 import java.util.function.Function
 
-abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T?, dialogTitle: String?) : AbsDynamoDbInputDialog<T>(dynamoDbRecord, dialogTitle) {
-    private var typeComboBox: ComboBox<String?>? = null
-    protected var tempAddAttrValue: AttributeValue? = null
+abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle: String)
+    : AbsDynamoDbInputDialog<T>(dynamoDbRecord, dialogTitle) {
+    var typeComboBox: ComboBox<String?> = getInitTypeComboBox()
 
     /*
 	 * for open attribute edit dialog
 	 */
-    abstract fun getAttributeFromEditButtonId(btnId: String): AttributeValue?
+    abstract fun getAttributeFromEditButtonId(btnId: String): AttributeValue
     abstract fun getTitleAppendStr(btnId: String): String
     abstract fun callBackSetNewAttribute(btnId: String, attrVal: AttributeValue)
 
@@ -35,7 +35,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T?, dialogTitle
         val title = this.title + " > " + getTitleAppendStr(btnId)
         var attrVal = getAttributeFromEditButtonId(btnId)
         if (attrVal == null && btnId == addAttrEditButtonId) {
-            attrVal = selectedAddType.getInitValue()
+            attrVal = selectedAddType.initValue
         }
         if (attrVal!!.hasSs()) {
             val dialog = DynamoDbStringSetInputDialog(attrVal.ss(), title)
@@ -84,7 +84,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T?, dialogTitle
     /*
 	 * util method
 	 */
-    protected fun getAttributeFromNode(valueNode: Node?): AttributeValue? {
+    protected fun getAttributeFromNode(valueNode: Node): AttributeValue {
         if (valueNode is HBox) {
             val wkBox = valueNode
             val wkNode = wkBox.children[0]
@@ -108,7 +108,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T?, dialogTitle
         } else if (valueNode is Label) {
             return AttributeValue.builder().nul(true).build()
         }
-        return null
+        return AttributeValue.builder().nul(true).build()
     }
 
     protected fun checkValueNode(valueNode: Node?): Boolean {
@@ -131,27 +131,25 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T?, dialogTitle
      *
      * @return
      */
-    protected val selectedAddType: DynamoDbColumnType?
-        protected get() {
-            val selStr = getTypeComboBox().value
+    val selectedAddType: DynamoDbColumnType
+        get() {
+            val selStr = typeComboBox.value ?: return DynamoDbColumnType.UNKNOWN
             return DynamoDbColumnType.Companion.getColumnType(selStr)
         }
 
-    protected fun getTypeComboBox(): ComboBox<String?> {
-        if (typeComboBox == null) {
-            typeComboBox = ComboBox()
-            typeComboBox!!.isEditable = false
-            typeComboBox!!.items.clear()
-            for (type in DynamoDbColumnType.values()) {
-                typeComboBox!!.items.add(type.dispStr)
-            }
-            typeComboBox!!.setValue(typeComboBox!!.items[0])
-            typeComboBox!!.valueProperty().addListener { observable, oldValue, newValue -> onAddTypeComboSelChanged(oldValue, newValue) }
+    fun getInitTypeComboBox(): ComboBox<String?> {
+        typeComboBox = ComboBox<String?>()
+        typeComboBox!!.isEditable = false
+        typeComboBox!!.items.clear()
+        for (type in DynamoDbColumnType.values()) {
+            typeComboBox!!.items.add(type.displayStr)
         }
-        return typeComboBox
+        typeComboBox!!.setValue(typeComboBox!!.items[0])
+        typeComboBox!!.valueProperty().addListener { _, oldValue, newValue -> onAddTypeComboSelChanged(oldValue, newValue) }
+        return typeComboBox as ComboBox<String?>
     }
 
     companion object {
-        protected const val VALIDATION_MSG_NO_ATTR_VALUE = "Please set attribute value."
+        const val VALIDATION_MSG_NO_ATTR_VALUE = "Please set attribute value."
     }
 }

@@ -15,14 +15,12 @@ import java.util.ArrayList
  *
  * @author tanakaeiji
  */
-class TableListDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class TableListDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
     fun getTableList(condition: String, conditionType: TableNameCondType): List<String> {
         val ddb = dbClient
-        return try {
+        return ddb.use { ddb ->
             getAllTableNameList(ddb, condition, conditionType)
-        } finally {
-            ddb.close()
         }
     }
 

@@ -13,34 +13,32 @@ import java.lang.StringBuilder
 /*
  * https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/javav2/example_code/dynamodb/src/main/java/com/example/dynamodb/Query.java
  */
-class QueryDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class QueryDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
-    fun getResult(tableInfo: TableDescription?, conditionJoinType: DynamoDbConditionJoinType,
+    fun getResult(tableInfo: TableDescription, conditionJoinType: DynamoDbConditionJoinType,
                   conditionList: List<DynamoDbCondition>): DynamoDbResult {
-        val tableName = tableInfo!!.tableName()
+        val tableName = tableInfo.tableName()
         val ddb = dbClient
-        return try {
+        return ddb.use { ddb ->
             val attrNameAlias = HashMap<String?, String>()
             val attrValues = HashMap<String, AttributeValue>()
             val conditionExpression = StringBuilder()
             for (dbCond in conditionList) {
                 attrNameAlias[dbCond.alias] = dbCond.columnName
                 attrValues[":" + dbCond.columnName] = AttributeValue.builder().s(dbCond.value).build()
-                if (conditionExpression.length > 0) {
+                if (conditionExpression.isNotEmpty()) {
                     conditionExpression.append(conditionJoinType.joinStr)
                 }
                 conditionExpression.append(dbCond.conditionExpression)
             }
             val queryReq = QueryRequest.builder()
-                    .tableName(tableName)
-                    .keyConditionExpression(conditionExpression.toString())
-                    .expressionAttributeNames(attrNameAlias)
-                    .expressionAttributeValues(attrValues)
-                    .build()
-            val response = ddb!!.query(queryReq)
+                .tableName(tableName)
+                .keyConditionExpression(conditionExpression.toString())
+                .expressionAttributeNames(attrNameAlias)
+                .expressionAttributeValues(attrValues)
+                .build()
+            val response = ddb.query(queryReq)
             DynamoDbResult(response.items(), tableInfo)
-        } finally {
-            ddb!!.close()
         }
     }
 }

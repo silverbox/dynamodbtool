@@ -6,7 +6,7 @@ import software.amazon.awssdk.services.dynamodb.model.*
 import java.util.ArrayList
 
 enum class DynamoDbColumnType(//
-        val dispStr: String, val dispOrd: Int, val category: DynamoDbColumnTypeCategory) {
+        val displayStr: String, val displayOrder: Int, val category: DynamoDbColumnTypeCategory) {
     STRING("STRING", 0, DynamoDbColumnTypeCategory.SCALAR),  //
     NUMBER("NUMBER", 1, DynamoDbColumnTypeCategory.SCALAR),  //
     BOOLEAN("BOOL", 2, DynamoDbColumnTypeCategory.SCALAR),  //
@@ -16,9 +16,10 @@ enum class DynamoDbColumnType(//
     NUMBER_SET("Set of NUMBER", 6, DynamoDbColumnTypeCategory.SET),  //
     BINARY_SET("Set of BINARY", 7, DynamoDbColumnTypeCategory.SET),  //
     MAP("MAP", 8, DynamoDbColumnTypeCategory.DOCUMENT),  //
-    LIST("LIST", 9, DynamoDbColumnTypeCategory.DOCUMENT);
+    LIST("LIST", 9, DynamoDbColumnTypeCategory.DOCUMENT),  //
+    UNKNOWN("----", 99, DynamoDbColumnTypeCategory.SCALAR);
 
-    val initValue: AttributeValue?
+    val initValue: AttributeValue
         get() {
             if (this == STRING) {
                 return AttributeValue.builder().s("").build()
@@ -41,17 +42,17 @@ enum class DynamoDbColumnType(//
             } else if (this == MAP) {
                 return AttributeValue.builder().m(HashMap()).build()
             }
-            return null
+            return AttributeValue.builder().s("").build()
         }
 
     companion object {
-        fun getColumnType(dispStr: String?): DynamoDbColumnType? {
+        fun getColumnType(displayStr: String): DynamoDbColumnType {
             for (type in values()) {
-                if (type.dispStr == dispStr) {
+                if (type.displayStr == displayStr) {
                     return type
                 }
             }
-            return null
+            return UNKNOWN
         }
     }
 }

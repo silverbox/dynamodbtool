@@ -11,17 +11,15 @@ import software.amazon.awssdk.services.dynamodb.model.DescribeTableRequest
  *
  * @author tanakaeiji
  */
-class TableInfoDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class TableInfoDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
     fun getTableDescription(tableName: String?): TableDescription {
         val request = DescribeTableRequest.builder()
                 .tableName(tableName)
                 .build()
         val ddb = dbClient
-        return try {
-            ddb!!.describeTable(request).table()
-        } finally {
-            ddb!!.close()
+        return ddb.use { ddb ->
+            ddb.describeTable(request).table()
         }
     }
 }

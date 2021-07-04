@@ -9,13 +9,13 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectType
 import software.amazon.awssdk.regions.Region
 import java.net.URI
 
-open class AbsDao(private val connInfo: DynamoDbConnectInfo?) {
+open class AbsDao(private val connInfo: DynamoDbConnectInfo) {
     @get:Throws(URISyntaxException::class)
     protected val dbClient: DynamoDbClient
-        protected get() = if (connInfo.getConnectType() == DynamoDbConnectType.AWS) {
+        protected get() = if (connInfo.connectType == DynamoDbConnectType.AWS) {
             DynamoDbClient.builder().region(region).build()
         } else {
-            DynamoDbClient.builder().endpointOverride(URI(connInfo.getEndpointUrl())).region(region).build()
+            DynamoDbClient.builder().endpointOverride(URI(connInfo.endpointUrl)).region(region).build()
         }
 
     companion object {

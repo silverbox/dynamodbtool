@@ -10,16 +10,16 @@ import software.amazon.awssdk.services.dynamodb.model.*
  *
  * @author tanakaeiji
  */
-class PutItemDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class PutItemDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
-    fun putItem(tableInfo: TableDescription?, dynamoDbRec: Map<String?, AttributeValue?>?): PutItemResponse {
+    fun putItem(tableInfo: TableDescription?, dynamoDbRec: Map<String, AttributeValue>): PutItemResponse {
         val tableName = tableInfo!!.tableName()
         val ddb = dbClient
         return try {
             val request = PutItemRequest.builder().tableName(tableName).item(dynamoDbRec).build()
-            ddb!!.putItem(request)
+            ddb.putItem(request)
         } finally {
-            ddb!!.close()
+            ddb.close()
         }
     }
 }

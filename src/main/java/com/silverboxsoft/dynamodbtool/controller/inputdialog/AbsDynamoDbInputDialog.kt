@@ -22,30 +22,30 @@ import software.amazon.awssdk.services.dynamodb.model.*
 import java.lang.StringBuilder
 import java.util.ArrayList
 
-abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String?) : Dialog<R>() {
+abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String) : Dialog<R>() {
     private val headGridPane: GridPane
 
     /*
 	 * accessor for inherited class
 	 */
-    protected val gridPane: GridPane
-    protected val footGridPane: GridPane
+    private val gridPane: GridPane
+    private val footGridPane: GridPane
     private val scrollPane: ScrollPane
     private val gridAnchorPane: AnchorPane
     protected val addButton: Button
-    protected var buttonData: ButtonData? = null
+    protected var buttonData: ButtonData = ButtonData.OTHER
     private var isValidData = false
-    protected val dynamoDbRecordOrg: R?
-    var orgBodyAttribueNodeList: List<List<Node?>?> = ArrayList()
-    var addBodyAttribueNodeList: MutableList<List<Node?>?> = ArrayList()
+    protected val dynamoDbRecordOrg: R
+    var orgBodyAttribueNodeList: List<List<Node>> = ArrayList()
+    var addBodyAttribueNodeList: MutableList<List<Node>> = ArrayList()
 
     /*
 	 * for setup
 	 */
     abstract val headerWidthList: List<Int>
-    abstract val headerLabelList: List<Node?>
-    abstract val bodyAttributeNodeList: List<List<Node?>?>
-    abstract val footerNodeList: List<Node?>
+    abstract val headerLabelList: List<Node>
+    abstract val bodyAttributeNodeList: List<List<Node>>
+    abstract val footerNodeList: List<Node>
 
     /*
 	 * for screen resize
@@ -71,15 +71,15 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
     /*
 	 * utility function
 	 */
-    protected val currentBodyNodeList: List<List<Node?>?>
-        protected get() {
-            val curNodeList: MutableList<List<Node?>?> = ArrayList()
+    protected val currentBodyNodeList: List<List<Node>>
+        get() {
+            val curNodeList: MutableList<List<Node>> = ArrayList()
             curNodeList.addAll(orgBodyAttribueNodeList)
             curNodeList.addAll(addBodyAttribueNodeList)
             return curNodeList
         }
 
-    protected fun getContentLabel(text: String?, isBold: Boolean): Label {
+    protected fun getContentLabel(text: String, isBold: Boolean): Label {
         val label = getContentLabel(text)
         label.style = "-fx-font-weight: bold;"
         return label
@@ -97,7 +97,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
     /*
 	 * class methods
 	 */
-    protected fun setupComponent() {
+    private fun setupComponent() {
         headGridPane.hgap = HGAP.toDouble()
         headGridPane.vgap = VGAP.toDouble()
         headGridPane.maxWidth = Double.MAX_VALUE
@@ -144,7 +144,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
         orgBodyAttribueNodeList = bodyAttributeNodeList
         for (rIdx in orgBodyAttribueNodeList.indices) {
             val nodelList = orgBodyAttribueNodeList[rIdx]
-            for (cIdx in nodelList!!.indices) {
+            for (cIdx in nodelList.indices) {
                 gridPane.add(nodelList[cIdx], cIdx, rIdx)
             }
             val wkRowConstraint = RowConstraints()
@@ -154,7 +154,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
         updateFooter()
     }
 
-    protected fun setupScreen() {
+    private fun setupScreen() {
         val screenSize2d = Screen.getPrimary().visualBounds
         val screenHeight = screenSize2d.height
         val screenWidth = screenSize2d.width
@@ -190,7 +190,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
         scrollPane.widthProperty().addListener(stageSizeListener)
     }
 
-    protected fun addAttributeNodeList(newNodeList: List<Node?>) {
+    protected fun addAttributeNodeList(newNodeList: List<Node>) {
         val newIdx = orgBodyAttribueNodeList.size + addBodyAttribueNodeList.size
         for (cIdx in newNodeList.indices) {
             gridPane.add(newNodeList[cIdx], cIdx, newIdx)
@@ -207,27 +207,28 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
     }
 
     companion object {
-        protected const val VALIDATION_MSG_INVALID_VALUE = "Invalid value."
-        protected const val HGAP = 5
-        protected const val VGAP = 5
-        protected const val FILELD_WIDTH = 300
-        protected const val NAME_COL_WIDTH = 150
-        protected const val DEL_COL_WIDTH = 50
-        protected const val GRID_MIN_HEIGHT = 25
-        protected const val STRFLD_ID_PREFIX = "txtEdit_"
-        protected const val NUMFLD_ID_PREFIX = "numEdit_"
-        protected const val BINFLD_ID_PREFIX = "binEdit_"
-        protected const val VALLBL_ID_PREFIX = "valLabel_"
-        protected const val EDTBTN_ID_PREFIX = "btnEdit_"
-        protected const val ADDBTN_ID = "btnAddAttribute"
-        protected const val DEL_ID_PREFIX = "ckbDel_"
-        protected const val BTN_TITLE = "Edit"
+        const val VALIDATION_MSG_INVALID_VALUE = "Invalid value."
+        const val HGAP = 5.0
+        const val VGAP = 5.0
+        const val FILELD_WIDTH = 300
+        const val NAME_COL_WIDTH = 150
+        const val DEL_COL_WIDTH = 50
+        const val GRID_MIN_HEIGHT = 25
+        const val STRFLD_ID_PREFIX = "txtEdit_"
+        const val NUMFLD_ID_PREFIX = "numEdit_"
+        const val BINFLD_ID_PREFIX = "binEdit_"
+        const val VALLBL_ID_PREFIX = "valLabel_"
+        const val EDTBTN_ID_PREFIX = "btnEdit_"
+        const val ADDBTN_ID = "btnAddAttribute"
+        const val DEL_ID_PREFIX = "ckbDel_"
+        const val BTN_TITLE = "Edit"
+        val NULL_ATTRIBUTE = AttributeValue.builder().nul(true).build()
 
         /*
-	 * static function
-	 */
+        * static function
+        */
         // same as DialogPane.createContentLabel
-        protected fun getContentLabel(text: String?): Label {
+        fun getContentLabel(text: String): Label {
             val label = Label(text)
             label.maxWidth = Double.MAX_VALUE
             label.maxHeight = Double.MAX_VALUE
@@ -238,7 +239,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
             return label
         }
 
-        protected fun getBooleanInput(attrVal: AttributeValue?): HBox {
+        fun getBooleanInput(attrVal: AttributeValue): HBox {
             val hbox = HBox(HGAP)
             val radioButtonTrue = RadioButton()
             val radioButtonFalse = RadioButton()
@@ -247,27 +248,27 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
             val toggleGroup = ToggleGroup()
             radioButtonTrue.toggleGroup = toggleGroup
             radioButtonFalse.toggleGroup = toggleGroup
-            radioButtonTrue.isSelected = attrVal!!.bool()
+            radioButtonTrue.isSelected = attrVal.bool()
             radioButtonFalse.isSelected = !attrVal.bool()
             hbox.children.addAll(radioButtonTrue, radioButtonFalse)
             return hbox
         }
 
-        protected val nullViewLabel: Node
-            protected get() = getContentLabel("<null>")
+        val nullViewLabel: Node
+            get() = getContentLabel("<null>")
 
-        protected fun getBooleanValue(hbox: HBox): Boolean {
+        fun getBooleanValue(hbox: HBox): Boolean {
             val radioButtonTrue = hbox.children[0] as RadioButton
             return radioButtonTrue.isSelected
         }
 
-        protected fun addUnderlineStyleToNode(node: Node): Node {
+        fun addUnderlineStyleToNode(node: Node): Node {
             val wkStyle = node.style
-            val sb_style = StringBuilder(wkStyle)
-            sb_style.append("-fx-border-style: none none solid none;")
-            sb_style.append("-fx-border-color: white white lightgray white;")
-            sb_style.append("-fx-border-width: 0 0 1 0;")
-            node.style = sb_style.toString()
+            val sbStyle = StringBuilder(wkStyle)
+            sbStyle.append("-fx-border-style: none none solid none;")
+            sbStyle.append("-fx-border-color: white white lightgray white;")
+            sbStyle.append("-fx-border-width: 0 0 1 0;")
+            node.style = sbStyle.toString()
             return node
         }
     }
@@ -278,8 +279,8 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R?, dialogTitle: String
         this.title = dialogTitle
         onCloseRequest = EventHandler { dialogEvent: DialogEvent -> doFinalConfirmation(dialogEvent) }
         dynamoDbRecordOrg = dynamoDbRecord
-        setResultConverter { dialogButton: ButtonType? ->
-            buttonData = dialogButton?.buttonData
+        setResultConverter { dialogButton: ButtonType ->
+            buttonData = dialogButton.buttonData
             if (buttonData == ButtonData.OK_DONE) {
                 isValidData = isFinalValidationOk
                 return@setResultConverter if (isValidData) editedDynamoDbRecord else emptyAttr

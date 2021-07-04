@@ -67,14 +67,14 @@ class DynamoDbToolController : Initializable {
     /*
 	 * event handler
 	 */
-    private var dialog: Alert? = null
-    override fun initialize(location: URL, resources: ResourceBundle) {
+    private var dialog: Alert = Alert(AlertType.INFORMATION)
+    override fun initialize(location: URL, resources: ResourceBundle?) {
         initCmb()
         initLoadDialog()
     }
 
     @FXML
-    protected fun actTableListLoad(ev: ActionEvent?) {
+    fun actTableListLoad(ev: ActionEvent?) {
         val errInfo = DynamoDbErrorInfo()
         val task: Task<Boolean> = object : Task<Boolean>() {
             @Throws(Exception::class)
@@ -104,35 +104,35 @@ class DynamoDbToolController : Initializable {
 
     @FXML
     @Throws(Exception::class)
-    protected fun actLoad(ev: ActionEvent?) {
+    fun actLoad(ev: ActionEvent?) {
         val activeTable = activeDynamoDbTable ?: return
         activeTable.actLoad(ev)
     }
 
     @FXML
     @Throws(Exception::class)
-    protected fun actAdd(ev: ActionEvent?) {
+    fun actAdd(ev: ActionEvent?) {
         val activeTable = activeDynamoDbTable ?: return
         activeTable.actAdd(ev)
     }
 
     @FXML
     @Throws(Exception::class)
-    protected fun actDel(ev: ActionEvent?) {
+    fun actDel(ev: ActionEvent?) {
         val activeTable = activeDynamoDbTable ?: return
         activeTable.actDel(ev)
     }
 
     @FXML
     @Throws(Exception::class)
-    protected fun actCopyAdd(ev: ActionEvent?) {
+    fun actCopyAdd(ev: ActionEvent?) {
         val activeTable = activeDynamoDbTable ?: return
         activeTable.actCopyAdd(ev)
     }
 
     @FXML
     @Throws(Exception::class)
-    protected fun actShowTableInfo(ev: ActionEvent?) {
+    fun actShowTableInfo(ev: ActionEvent?) {
         val activeTable = activeDynamoDbTable ?: return
         val desc = activeTable.tableInfo
         val sb = StringBuilder()
@@ -151,7 +151,7 @@ class DynamoDbToolController : Initializable {
     }
 
     @FXML
-    protected fun onLvTableListClicked(ev: MouseEvent) {
+    fun onLvTableListClicked(ev: MouseEvent) {
         try {
             if (ev.clickCount >= 2) {
                 actTableDecided()
@@ -163,7 +163,7 @@ class DynamoDbToolController : Initializable {
     }
 
     @FXML
-    protected fun actCloseActiveTab(ev: ActionEvent?) {
+    fun actCloseActiveTab(ev: ActionEvent?) {
         val activeIndex = tabPaneTable!!.selectionModel.selectedIndex
         if (tabPaneTable!!.tabs.size > 1) {
             tabPaneTable!!.tabs.removeAt(activeIndex)
@@ -171,7 +171,7 @@ class DynamoDbToolController : Initializable {
     }
 
     @FXML
-    protected fun actCloseAllNonActiveTab(ev: ActionEvent?) {
+    fun actCloseAllNonActiveTab(ev: ActionEvent?) {
         val activeIndex = tabPaneTable!!.selectionModel.selectedIndex
         val tabCount = tabPaneTable!!.tabs.size
         for (wkIdx in activeIndex + 1 until tabCount) {
@@ -186,10 +186,9 @@ class DynamoDbToolController : Initializable {
 	 * Actions
 	 */
     @Throws(URISyntaxException::class)
-    protected fun actTableDecided() {
+    fun actTableDecided() {
         val tableName = lvTableList!!.selectionModel.selectedItem
-        val dbtable = DynamoDbTable()
-        dbtable.initialize(connectInfo, tableName, dialog)
+        val dbtable = DynamoDbTable(connectInfo, tableName, dialog)
         val newTab = Tab()
         newTab.text = tableName
         newTab.content = dbtable
@@ -202,11 +201,9 @@ class DynamoDbToolController : Initializable {
 	 * method
 	 */
     private fun initLoadDialog() {
-        dialog = Alert(AlertType.INFORMATION)
-        dialog!!.headerText = null
-        // dialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-        dialog!!.contentText = "Now Loading..."
-        val pane: Pane = dialog!!.dialogPane
+        dialog.headerText = null
+        dialog.contentText = "Now Loading..."
+        val pane: Pane = dialog.dialogPane
         val nodes = pane.children
         for (node in nodes) {
             (node as? ButtonBar)?.isVisible = false
@@ -218,7 +215,7 @@ class DynamoDbToolController : Initializable {
     }
 
     private val connectInfo: DynamoDbConnectInfo
-        private get() {
+        get() {
             var connectType = DynamoDbConnectType.LOCAL
             if (rbConnectAWS!!.isSelected) {
                 connectType = DynamoDbConnectType.AWS
@@ -226,7 +223,7 @@ class DynamoDbToolController : Initializable {
             return DynamoDbConnectInfo(connectType, txtFldLocalEndpoint!!.text)
         }
     private val activeDynamoDbTable: DynamoDbTable?
-        private get() {
+        get() {
             val activeIndex = tabPaneTable!!.selectionModel.selectedIndex
             if (activeIndex >= tabPaneTable!!.tabs.size || activeIndex < 0) {
                 return null

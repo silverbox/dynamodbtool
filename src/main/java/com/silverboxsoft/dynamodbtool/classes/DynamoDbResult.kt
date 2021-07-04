@@ -14,10 +14,11 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
     private val colNameIndex: MutableMap<String, Int> = HashMap()
     private val resItems: MutableList<DynamoDbViewRecord> = ArrayList()
     private val rawResItems: MutableList<Map<String, AttributeValue>> = ArrayList()
+
     private fun prepareKeyInfo(tableInfo: TableDescription) {
         columnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
         for (idx in columnList.indices) {
-            colNameIndex[columnList[idx].getColumnName()] = idx
+            colNameIndex[columnList[idx].columnName] = idx
         }
     }
 
@@ -33,7 +34,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
         // pick up data which attribute name is set.
         for (colIdx in columnList.indices) {
             val dbCol = getDynamoDbColumn(colIdx)
-            val columnName = dbCol.getColumnName()
+            val columnName = dbCol.columnName
             record.add(DynamoDbUtils.Companion.getAttrString(resItem[columnName]))
         }
 
@@ -52,7 +53,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
     }
 
     private fun fillNewColumn() {
-        resItems.stream().forEach { rec: DynamoDbViewRecord -> rec.getData().add(DynamoDbUtils.Companion.NO_VALSTR) }
+        resItems.stream().forEach { rec: DynamoDbViewRecord -> rec.getData().plus(DynamoDbUtils.Companion.NO_VALSTR) }
     }
 
     val columnCount: Int
@@ -62,7 +63,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
     val resultItems: List<DynamoDbViewRecord>
         get() = resItems
 
-    fun getRawResItems(): List<Map<String?, AttributeValue?>> {
+    fun getRawResItems(): List<Map<String, AttributeValue>> {
         return rawResItems
     }
 
@@ -73,8 +74,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
     fun addRecord(newRec: Map<String, AttributeValue>): DynamoDbViewRecord {
         rawResItems.add(newRec)
         val data = prepareOneTableRecord(newRec)
-        val record: DynamoDbViewRecord = builder().index(resItems.size).data(data)
-                .build()
+        val record: DynamoDbViewRecord = DynamoDbViewRecord(resItems.size, data)
         resItems.add(record)
         return record
     }
@@ -92,10 +92,8 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
         rawResItems.removeAt(rowIndex)
     }
 
-    fun getColumnIndexByName(colName: String): Int? {
-        return if (colNameIndex.containsKey(colName)) {
-            colNameIndex[colName]
-        } else -1
+    fun getColumnIndexByName(colName: String): Int {
+        return colNameIndex.getOrDefault(colName, -1)
     }
 
     init {

@@ -48,31 +48,43 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
             return attrVal.toString()
         }
 
-        fun getAttrTypeString(attrVal: AttributeValue?): String? {
-            if (attrVal == null) {
-                return NO_VALSTR
-            } else if (attrVal.s() != null) {
-                return DynamoDbColumnType.STRING.dispStr
-            } else if (attrVal.n() != null) {
-                return DynamoDbColumnType.NUMBER.dispStr
-            } else if (attrVal.b() != null) {
-                return DynamoDbColumnType.BINARY.dispStr
-            } else if (attrVal.bool() != null) {
-                return DynamoDbColumnType.BOOLEAN.dispStr
-            } else if (attrVal.hasSs()) {
-                return DynamoDbColumnType.STRING_SET.dispStr
-            } else if (attrVal.hasNs()) {
-                return DynamoDbColumnType.NUMBER_SET.dispStr
-            } else if (attrVal.hasBs()) {
-                return DynamoDbColumnType.BINARY_SET.dispStr
-            } else if (attrVal.hasM()) {
-                return DynamoDbColumnType.MAP.dispStr
-            } else if (attrVal.hasL()) {
-                return DynamoDbColumnType.LIST.dispStr
-            } else if (isNullAttr(attrVal)) {
-                return DynamoDbColumnType.NULL.dispStr
+        fun getAttrTypeString(attrVal: AttributeValue): String {
+            when {
+                attrVal == null -> {
+                    return NO_VALSTR
+                }
+                attrVal.s() != null -> {
+                    return DynamoDbColumnType.STRING.displayStr
+                }
+                attrVal.n() != null -> {
+                    return DynamoDbColumnType.NUMBER.displayStr
+                }
+                attrVal.b() != null -> {
+                    return DynamoDbColumnType.BINARY.displayStr
+                }
+                attrVal.bool() != null -> {
+                    return DynamoDbColumnType.BOOLEAN.displayStr
+                }
+                attrVal.hasSs() -> {
+                    return DynamoDbColumnType.STRING_SET.displayStr
+                }
+                attrVal.hasNs() -> {
+                    return DynamoDbColumnType.NUMBER_SET.displayStr
+                }
+                attrVal.hasBs() -> {
+                    return DynamoDbColumnType.BINARY_SET.displayStr
+                }
+                attrVal.hasM() -> {
+                    return DynamoDbColumnType.MAP.displayStr
+                }
+                attrVal.hasL() -> {
+                    return DynamoDbColumnType.LIST.displayStr
+                }
+                isNullAttr(attrVal) -> {
+                    return DynamoDbColumnType.NULL.displayStr
+                }
+                else -> return DynamoDbColumnType.UNKNOWN.displayStr
             }
-            return "UNKNOWN"
         }
 
         /**
@@ -83,28 +95,39 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
          */
         // https://sdk.amazonaws.com/java/api/2.0.0/software/amazon/awssdk/services/dynamodb/model/AttributeValue.html
         fun getDynamoDbColumnType(attrVal: AttributeValue?): DynamoDbColumnType {
-            if (attrVal == null) {
-                return DynamoDbColumnType.NULL
-            } else if (attrVal.hasSs()) {
-                return DynamoDbColumnType.STRING_SET
-            } else if (attrVal.hasNs()) {
-                return DynamoDbColumnType.NUMBER_SET
-            } else if (attrVal.hasBs()) {
-                return DynamoDbColumnType.BINARY_SET
-            } else if (attrVal.hasM()) {
-                return DynamoDbColumnType.MAP
-            } else if (attrVal.hasL()) {
-                return DynamoDbColumnType.LIST
-            } else if (attrVal.s() != null) {
-                return DynamoDbColumnType.STRING
-            } else if (attrVal.b() != null) {
-                return DynamoDbColumnType.BINARY
-            } else if (attrVal.bool() != null) {
-                return DynamoDbColumnType.BOOLEAN
-            } else if (attrVal.n() != null) {
-                return DynamoDbColumnType.NUMBER
+            when {
+                attrVal == null -> {
+                    return DynamoDbColumnType.NULL
+                }
+                attrVal.hasSs() -> {
+                    return DynamoDbColumnType.STRING_SET
+                }
+                attrVal.hasNs() -> {
+                    return DynamoDbColumnType.NUMBER_SET
+                }
+                attrVal.hasBs() -> {
+                    return DynamoDbColumnType.BINARY_SET
+                }
+                attrVal.hasM() -> {
+                    return DynamoDbColumnType.MAP
+                }
+                attrVal.hasL() -> {
+                    return DynamoDbColumnType.LIST
+                }
+                attrVal.s() != null -> {
+                    return DynamoDbColumnType.STRING
+                }
+                attrVal.b() != null -> {
+                    return DynamoDbColumnType.BINARY
+                }
+                attrVal.bool() != null -> {
+                    return DynamoDbColumnType.BOOLEAN
+                }
+                attrVal.n() != null -> {
+                    return DynamoDbColumnType.NUMBER
+                }
+                else -> return DynamoDbColumnType.NULL
             }
-            return DynamoDbColumnType.NULL
         }
 
         /**
@@ -114,14 +137,18 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
          * @return
          */
         fun getDynamoDbColumnType(attr: AttributeDefinition): DynamoDbColumnType {
-            if (attr.attributeType() == ScalarAttributeType.S) {
-                return DynamoDbColumnType.STRING
-            } else if (attr.attributeType() == ScalarAttributeType.N) {
-                return DynamoDbColumnType.NUMBER
-            } else if (attr.attributeType() == ScalarAttributeType.B) {
-                return DynamoDbColumnType.BINARY
+            when {
+                attr.attributeType() == ScalarAttributeType.S -> {
+                    return DynamoDbColumnType.STRING
+                }
+                attr.attributeType() == ScalarAttributeType.N -> {
+                    return DynamoDbColumnType.NUMBER
+                }
+                attr.attributeType() == ScalarAttributeType.B -> {
+                    return DynamoDbColumnType.BINARY
+                }
+                else -> return DynamoDbColumnType.NULL
             }
-            return DynamoDbColumnType.NULL
         }
 
         /*
@@ -153,14 +180,14 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
             return wkStr == "AttributeValue(NUL=true)"
         }
 
-        fun getSortedAttrNameList(dynamoDbRecord: Map<String?, AttributeValue?>?): List<String?> {
-            val attrNameList: List<String?> = ArrayList(dynamoDbRecord!!.keys)
-            attrNameList.sort(
-                    Comparator.comparing { attrName: String? -> getDynamoDbColumnType(dynamoDbRecord[attrName]).dispOrd })
-            return attrNameList
+        fun getSortedAttrNameList(dynamoDbRecord: Map<String, AttributeValue>): List<String> {
+            val attrNameList: List<String> = ArrayList(dynamoDbRecord.keys)
+            return attrNameList.sortedWith(
+                Comparator.comparing { attrName: String -> getDynamoDbColumnType(dynamoDbRecord[attrName]).displayOrder }
+            )
         }
 
-        fun getKeyValueStr(tableInfo: TableDescription?, dynamoDbRecord: Map<String?, AttributeValue?>?): String {
+        fun getKeyValueStr(tableInfo: TableDescription?, dynamoDbRecord: Map<String, AttributeValue>): String {
             val sb = StringBuilder()
             var partitionKeyElem: KeySchemaElement? = null
             var sortKeyElem: KeySchemaElement? = null
@@ -214,13 +241,14 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
             }
 
             // add global secondary index
+            val dummyDbCol = DynamoDbColumn("dummy", DynamoDbColumnType.NULL)
             for (gsiDesc in tableInfo.globalSecondaryIndexes()) {
                 val wkKeyInfos = gsiDesc.keySchema()
                 for (kse in wkKeyInfos) {
                     val gsiColName = kse.attributeName()
                     if (!colNameIndex.containsKey(gsiColName)) {
                         colNameIndex[gsiColName] = columnList.size
-                        columnList.add(wkGsiColMap[gsiColName])
+                        columnList.add(wkGsiColMap.getOrDefault(gsiColName, dummyDbCol))
                     }
                 }
             }

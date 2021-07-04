@@ -10,17 +10,15 @@ import software.amazon.awssdk.services.dynamodb.model.ExecuteStatementRequest
 /*
  * https://github.com/awsdocs/aws-doc-sdk-examples/blob/master/javav2/example_code/dynamodb/src/main/java/com/example/dynamodb/Query.java
  */
-class PartiQLDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class PartiQLDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
-    fun getResult(tableInfo: TableDescription?, partiQL: String?): DynamoDbResult {
+    fun getResult(tableInfo: TableDescription, partiQL: String): DynamoDbResult {
         val ddb = dbClient
-        return try {
+        return ddb.use { ddb ->
             val executeStatementRequest =  //
-                    ExecuteStatementRequest.builder().statement(partiQL).build()
-            val executeStatementResponse = ddb!!.executeStatement(executeStatementRequest)
+                ExecuteStatementRequest.builder().statement(partiQL).build()
+            val executeStatementResponse = ddb.executeStatement(executeStatementRequest)
             DynamoDbResult(executeStatementResponse.items(), tableInfo)
-        } finally {
-            ddb!!.close()
         }
     }
 }

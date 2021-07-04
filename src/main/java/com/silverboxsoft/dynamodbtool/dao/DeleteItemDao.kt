@@ -12,21 +12,19 @@ import software.amazon.awssdk.services.dynamodb.model.*
  *
  * @author tanakaeiji
  */
-class DeleteItemDao(connInfo: DynamoDbConnectInfo?) : AbsDao(connInfo) {
+class DeleteItemDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     @Throws(URISyntaxException::class)
-    fun deleteItem(tableInfo: TableDescription?, dynamoDbRec: Map<String?, AttributeValue?>?): DeleteItemResponse {
+    fun deleteItem(tableInfo: TableDescription?, dynamoDbRec: Map<String, AttributeValue>): DeleteItemResponse {
         val tableName = tableInfo!!.tableName()
         val ddb = dbClient
-        return try {
+        ddb.use { ddb ->
             val keyToGet = HashMap<String, AttributeValue?>()
             for (keyElem in tableInfo.keySchema()) {
                 val keyAttr = keyElem.attributeName()
-                keyToGet[keyAttr] = dynamoDbRec!![keyAttr]
+                keyToGet[keyAttr] = dynamoDbRec[keyAttr]
             }
             val deleteReq = DeleteItemRequest.builder().tableName(tableName).key(keyToGet).build()
-            ddb!!.deleteItem(deleteReq)
-        } finally {
-            ddb!!.close()
+            return ddb.deleteItem(deleteReq)
         }
     }
 }

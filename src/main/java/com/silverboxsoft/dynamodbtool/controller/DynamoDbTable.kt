@@ -45,7 +45,7 @@ import software.amazon.awssdk.utils.StringUtils
 import java.lang.StringBuilder
 import java.util.ArrayList
 
-class DynamoDbTable : AnchorPane() {
+class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableName: String, private val dialog: Alert) : AnchorPane() {
     /*
 	 * Data Condition
 	 */
@@ -74,7 +74,7 @@ class DynamoDbTable : AnchorPane() {
 	 * data area
 	 */
     @FXML
-    var tableResultList: TableView<DynamoDbViewRecord?>? = null
+    var tableResultList: TableView<DynamoDbViewRecord>? = null
 
     @FXML
     var contextMenuTable: ContextMenu? = null
@@ -90,29 +90,26 @@ class DynamoDbTable : AnchorPane() {
 
     @FXML
     var menuItemTableResultListCellSelectMode: MenuItem? = null
-    private var isCellSelectMode = true
-    var tableInfo: TableDescription? = null
-        private set
-    private var dialog: Alert
-    private val connInfo: DynamoDbConnectInfo
-    private val tableName: String
-    private val dynamoDbResult: DynamoDbResult
-    var partitionKeyName: String? = null
-        private set
-    var sortKeyName: String? = null
-        private set
-    private var hasSortKey = false
 
-    fun initialize(connInfo: DynamoDbConnectInfo, tableName: String, dialog: Alert?) {
-        this.connInfo = connInfo
-        this.tableName = tableName
-        this.dialog = dialog
+    private var isCellSelectMode = true
+
+    /*
+    init block
+     */
+    private val tableNameDao = TableInfoDao(connInfo)
+    val tableInfo: TableDescription = tableNameDao.getTableDescription(tableName)
+    var partitionKeyName: String = ""
+    var sortKeyName: String? = null
+    var hasSortKey = false
+    var dynamoDbResult: DynamoDbResult = DynamoDbResult(ArrayList(), tableInfo)
+
+    init {
         try {
             setCurrentTableInfo()
             doQueryDao(DYMMY_COND_VALUE)
             setTable(dynamoDbResult)
             loadType!!.selectedToggleProperty()
-                    .addListener { observ: ObservableValue<out Toggle?>?, oldVal: Toggle?, newVal: Toggle? -> onLoadTypeChange(null) }
+                .addListener { observ: ObservableValue<out Toggle?>?, oldVal: Toggle?, newVal: Toggle? -> onLoadTypeChange(null) }
             onLoadTypeChange(null)
         } catch (e: Exception) {
             val alert = Alert(AlertType.ERROR, e.message)
@@ -132,8 +129,8 @@ class DynamoDbTable : AnchorPane() {
             public override fun call(): Boolean {
                 try {
                     if (radioLoadPartiQL!!.isSelected) {
-                        val partqlDao = PartiQLDao(connInfo)
-                        dynamoDbResult = partqlDao.getResult(tableInfo, txtAreaPartiql!!.text)
+                        val partiQLDao = PartiQLDao(connInfo)
+                        dynamoDbResult = partiQLDao.getResult(tableInfo, txtAreaPartiql!!.text)
                     } else {
                         val condValue = txtFldCondValue!!.text
                         if (!StringUtils.isEmpty(condValue)) {
@@ -151,30 +148,30 @@ class DynamoDbTable : AnchorPane() {
                 return true
             }
         }
-        task.onRunning = EventHandler { e: WorkerStateEvent? -> dialog!!.show() }
+        task.onRunning = EventHandler { e: WorkerStateEvent? -> dialog.show() }
         task.onSucceeded = EventHandler { e: WorkerStateEvent? ->
             setTable(dynamoDbResult)
-            dialog!!.hide()
+            dialog.hide()
         }
         task.onFailed = EventHandler { e: WorkerStateEvent? ->
             val alert = Alert(AlertType.ERROR, errInfo.message)
             alert.show()
-            dialog!!.hide()
+            dialog.hide()
         }
         Thread(task).start()
     }
 
     @Throws(Exception::class)
     fun actAdd(ev: ActionEvent?) {
-        val rec: MutableMap<String?, AttributeValue?> = HashMap()
-        if (dynamoDbResult != null && dynamoDbResult.getRecordCount() > 0) {
-            for (idx in 0 until dynamoDbResult.getColumnCount()) {
-                val dbCol = dynamoDbResult!!.getDynamoDbColumn(idx)
+        val rec: MutableMap<String, AttributeValue> = HashMap()
+        if (dynamoDbResult.recordCount > 0) {
+            for (idx in 0 until dynamoDbResult.columnCount) {
+                val dbCol = dynamoDbResult.getDynamoDbColumn(idx)
                 rec[dbCol.columnName] = dbCol.columnType.initValue
             }
         } else {
             for (dbCol in DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)) {
-                rec[dbCol.getColumnName()] = dbCol.getColumnType().initValue
+                rec[dbCol.columnName] = dbCol.columnType.initValue
             }
         }
         doAdd(rec)
@@ -186,7 +183,7 @@ class DynamoDbTable : AnchorPane() {
         if (dataIndex < 0) {
             return
         }
-        val rec = dynamoDbResult!!.rawResItems[dataIndex]
+        val rec = dynamoDbResult.getRawResItems()[dataIndex]
         doAdd(rec)
     }
 
@@ -196,7 +193,7 @@ class DynamoDbTable : AnchorPane() {
         if (dataIndex < 0) {
             return
         }
-        val rec = dynamoDbResult!!.rawResItems[dataIndex]
+        val rec = dynamoDbResult.getRawResItems()[dataIndex]
         doUpdate(dataIndex, rec)
     }
 
@@ -206,7 +203,7 @@ class DynamoDbTable : AnchorPane() {
         if (dataIndex < 0) {
             return
         }
-        val rec = dynamoDbResult!!.rawResItems[dataIndex]
+        val rec = dynamoDbResult!!.getRawResItems()[dataIndex]
         doDelete(dataIndex, rec)
     }
 
@@ -284,9 +281,6 @@ class DynamoDbTable : AnchorPane() {
 	 */
     @Throws(URISyntaxException::class)
     private fun setCurrentTableInfo() {
-        val tableNameDao = TableInfoDao(connInfo)
-        val tableInfo = tableNameDao.getTableDescription(tableName)
-        this.tableInfo = tableInfo
         setCurrentTableInfoVariable()
         setDefaultPartiQL(PartiQLBaseCondType.NONE)
         tableResultList!!.selectionModel.selectionMode = SelectionMode.MULTIPLE
@@ -311,7 +305,7 @@ class DynamoDbTable : AnchorPane() {
         }
     }
 
-    private fun getWholeTableSelectedCellString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord?>,
+    private fun getWholeTableSelectedCellString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord>,
                                                 type: CopyModeType): String {
         val posList = getPositionList(selectedModel)
         val selectedRowStrSb = StringBuilder()
@@ -328,7 +322,7 @@ class DynamoDbTable : AnchorPane() {
                 selectedRowStrSb.append(lineSepStr(type))
                 selectedRowStrSb.append(lineWrapStr(type, true))
                 selectedRowStrSb.append(cellStr)
-            } else if (selectedRowStrSb.length == 0) {
+            } else if (selectedRowStrSb.isEmpty()) {
                 selectedRowStrSb.append(lineWrapStr(type, true))
                 selectedRowStrSb.append(cellStr)
             } else {
@@ -336,7 +330,7 @@ class DynamoDbTable : AnchorPane() {
             }
             oldRow = position.value
         }
-        if (selectedRowStrSb.length > 0) {
+        if (selectedRowStrSb.isNotEmpty()) {
             selectedRowStrSb.append(lineWrapStr(type, false))
         }
         selectedRowStrSb.insert(0, allLineWrapStr(type, true))
@@ -344,11 +338,11 @@ class DynamoDbTable : AnchorPane() {
         return selectedRowStrSb.toString()
     }
 
-    private fun getWholeTableSelectedRowString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord?>,
-                                               type: CopyModeType): String? {
+    private fun getWholeTableSelectedRowString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord>,
+                                               type: CopyModeType): String {
         val selectedRecords = selectedModel.selectedItems
         if (selectedRecords.size == 0) {
-            return null
+            return ""
         }
         val posList = getPositionList(selectedModel)
         val dupCheckSet: MutableSet<Int> = HashSet()
@@ -373,12 +367,12 @@ class DynamoDbTable : AnchorPane() {
         return selectedRowStrSb.toString()
     }
 
-    private fun getOneRowString(colNameList: List<String>, record: DynamoDbViewRecord?, type: CopyModeType): String {
+    private fun getOneRowString(colNameList: List<String>, record: DynamoDbViewRecord, type: CopyModeType): String {
         val oneRowStrSb = StringBuilder()
         for (colIdx in record.getData().indices) {
             val item = record.getData()[colIdx]
-            val wkItemStr = if (item == null) "" else record.getData()[colIdx]
-            if (oneRowStrSb.length > 0) {
+            val wkItemStr = record.getData()[colIdx]
+            if (oneRowStrSb.isNotEmpty()) {
                 oneRowStrSb.append(itemSepStr(type))
             }
             oneRowStrSb.append(escapedItemStr(colNameList[colIdx], wkItemStr, type))
@@ -448,11 +442,11 @@ class DynamoDbTable : AnchorPane() {
         private get() {
             val selectedModel = tableResultList!!.selectionModel
             val selRec = selectedModel.selectedItem ?: return -1
-            return selRec.index
+            return selRec.getIndex()
         }
 
     @Throws(URISyntaxException::class)
-    private fun doAdd(rec: Map<String?, AttributeValue?>?) {
+    private fun doAdd(rec: Map<String, AttributeValue>) {
         val dialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.ADD)
         val newRecWk = dialog.showAndWait()
         if (newRecWk.isPresent) {
@@ -465,7 +459,7 @@ class DynamoDbTable : AnchorPane() {
     }
 
     @Throws(URISyntaxException::class)
-    private fun doUpdate(dataIndex: Int, rec: Map<String?, AttributeValue?>?) {
+    private fun doUpdate(dataIndex: Int, rec: Map<String, AttributeValue>) {
         val dialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.UPD)
         val newRecWk = dialog.showAndWait()
         if (newRecWk.isPresent) {
@@ -478,7 +472,7 @@ class DynamoDbTable : AnchorPane() {
     }
 
     @Throws(URISyntaxException::class)
-    private fun doDelete(dataIndex: Int, rec: Map<String?, AttributeValue?>?) {
+    private fun doDelete(dataIndex: Int, rec: Map<String, AttributeValue>) {
         val sb = StringBuilder()
         sb.append("Table name = ").append(tableInfo!!.tableName()).append("\r\n")
         sb.append("Partition key ").append(partitionKeyName).append(" = ") //
@@ -502,23 +496,22 @@ class DynamoDbTable : AnchorPane() {
     }
 
     private fun getPositionList(
-            selectedModel: TableViewSelectionModel<DynamoDbViewRecord?>): List<Pair<Int, Int>> {
+            selectedModel: TableViewSelectionModel<DynamoDbViewRecord>): List<Pair<Int, Int>> {
         val selPosList = selectedModel.selectedCells
         val posList: MutableList<Pair<Int, Int>> = ArrayList()
         for (position in selPosList) {
             posList.add(Pair(position.column, position.row))
         }
-        posList.sort(java.util.Comparator { o1, o2 ->
+        return posList.sortedWith(java.util.Comparator { o1, o2 ->
             val rowdiff = o1.value - o2.value
             if (rowdiff != 0) {
                 rowdiff
             } else o1.key - o2.key
         })
-        return posList
     }
 
     private fun setCurrentTableInfoVariable() {
-        val keyInfos = tableInfo!!.keySchema()
+        val keyInfos = tableInfo.keySchema()
         for (k in keyInfos) {
             if (k.keyType() == KeyType.HASH) {
                 partitionKeyName = k.attributeName()
@@ -533,10 +526,7 @@ class DynamoDbTable : AnchorPane() {
     private fun doQueryDao(condValue: String) {
         val dao = QueryDao(connInfo)
         val conditionList: MutableList<DynamoDbCondition> = ArrayList()
-        val cond = DynamoDbCondition()
-        cond.columnName = partitionKeyName
-        cond.conditionType = DynamoDbConditionType.EQUAL
-        cond.value = condValue
+        val cond = DynamoDbCondition(partitionKeyName, DynamoDbConditionType.EQUAL, condValue)
         conditionList.add(cond)
         dynamoDbResult = dao.getResult(tableInfo, DynamoDbConditionJoinType.AND, conditionList)
     }
@@ -553,22 +543,23 @@ class DynamoDbTable : AnchorPane() {
         txtAreaPartiql!!.text = sbPartiQL.toString()
     }
 
-    private fun setTable(result: DynamoDbResult?) {
+    private fun setTable(result: DynamoDbResult) {
         tableResultList!!.items.clear()
         tableResultList!!.columns.clear()
-        for (colIdx in 0 until result.getColumnCount()) {
+        for (colIdx in 0 until result.columnCount) {
             val columnName = result!!.getDynamoDbColumn(colIdx).columnName
             val dataCol = getTableColumn(columnName, colIdx)
             dataCol.setCellFactory(TextFieldTableCell.forTableColumn())
             dataCol.maxWidth = TBL_COL_MAX_WIDTH.toDouble()
             tableResultList!!.columns.add(dataCol)
         }
-        tableResultList!!.items.addAll(result.getResultItems())
+        tableResultList!!.items.addAll(result.resultItems)
     }
 
     private fun getTableColumn(columnName: String, finalColIdx: Int): TableColumn<DynamoDbViewRecord?, String> {
         val dataCol = TableColumn<DynamoDbViewRecord?, String>(columnName)
-        dataCol.setCellValueFactory { param: TableColumn.CellDataFeatures<DynamoDbViewRecord?, String> -> ReadOnlyObjectWrapper(param.value.getData()[finalColIdx]) }
+        dataCol.setCellValueFactory { param: TableColumn.CellDataFeatures<DynamoDbViewRecord?, String>
+            -> ReadOnlyObjectWrapper(param.value!!.getData()[finalColIdx]) }
         dataCol.id = columnName
         return dataCol
     }

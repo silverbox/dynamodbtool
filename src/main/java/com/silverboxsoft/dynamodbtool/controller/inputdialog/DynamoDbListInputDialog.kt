@@ -11,12 +11,14 @@ import javafx.scene.control.*
 import software.amazon.awssdk.services.dynamodb.model.*
 import java.util.ArrayList
 
-class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitle: String?) : AbsDynamoDbDocumentInputDialog<List<AttributeValue?>?>(dynamoDbRecord, dialogTitle) {
-    private var addAttrValueNode: Node? = null
+class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle: String)
+    : AbsDynamoDbDocumentInputDialog<List<AttributeValue>>(dynamoDbRecord, dialogTitle) {
+    private var addAttrValueNode: Node = getAtrributeBox(ADD_INDEX, selectedAddType.initValue)
     private val updAttributeMap: MutableMap<String, AttributeValue> = HashMap()
-    private var addAttributeMap: MutableMap<String, AttributeValue?>? = HashMap()
-    protected override val headerWidthList: List<Int>
-        protected get() {
+    private var addAttributeMap: MutableMap<String, AttributeValue> = HashMap()
+    private var tempAddAttrValue: AttributeValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+    override val headerWidthList: List<Int>
+        get() {
             val retList: MutableList<Int> = ArrayList()
             retList.add(AbsDynamoDbInputDialog.Companion.NAME_COL_WIDTH)
             retList.add(AbsDynamoDbInputDialog.Companion.NAME_COL_WIDTH)
@@ -24,31 +26,31 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
             retList.add(AbsDynamoDbInputDialog.Companion.DEL_COL_WIDTH)
             return retList
         }
-    protected override val headerLabelList: List<Node?>
-        protected get() {
+    override val headerLabelList: List<Node>
+        get() {
             val indexTitilelabel = getContentLabel("INDEX", true)
             val typeTitilelabel = getContentLabel("TYPE", true)
             val valTtilelabel = getContentLabel("VALUE", true)
             val delTtilelabel = getContentLabel("DEL", true)
-            val retList: MutableList<Node?> = ArrayList()
+            val retList: MutableList<Node> = ArrayList()
             retList.add(indexTitilelabel)
             retList.add(typeTitilelabel)
             retList.add(valTtilelabel)
             retList.add(delTtilelabel)
             return retList
         }
-    protected override val bodyAttributeNodeList: List<List<Node?>?>
-        protected get() {
-            val retList: MutableList<List<Node?>?> = ArrayList()
+    override val bodyAttributeNodeList: List<List<Node>>
+        get() {
+            val retList: MutableList<List<Node>> = ArrayList()
             for (recIdx in dynamoDbRecordOrg.indices) {
                 val attrVal: AttributeValue = dynamoDbRecordOrg.get(recIdx)
                 retList.add(getOneBodyAttributeNodeList(recIdx, attrVal))
             }
             return retList
         }
-    protected override val footerNodeList: List<Node?>
-        protected get() {
-            val retList: MutableList<Node?> = ArrayList()
+    override val footerNodeList: List<Node>
+        get() {
+            val retList: MutableList<Node> = ArrayList()
             addAttrValueNode = getAtrributeBox(ADD_INDEX, selectedAddType.initValue)
             retList.add(Label("new Index"))
             retList.add(typeComboBox)
@@ -56,14 +58,14 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
             retList.add(addButton)
             return retList
         }
-    protected override val valueColIndex: Int
-        protected get() = 2
-    protected override val editedDynamoDbRecord: R
-        protected get() {
-            val retList: MutableList<AttributeValue?> = ArrayList()
+    override val valueColIndex: Int
+        get() = 2
+    override val editedDynamoDbRecord: List<AttributeValue>
+        get() {
+            val retList: MutableList<AttributeValue> = ArrayList()
             val currentBodyNodeList = currentBodyNodeList
-            for (wkNodeList in currentBodyNodeList!!) {
-                val delCheck = wkNodeList!![COL_IDX_DEL] as CheckBox
+            for (wkNodeList in currentBodyNodeList) {
+                val delCheck = wkNodeList[COL_IDX_DEL] as CheckBox
                 if (delCheck.isSelected) {
                     continue
                 }
@@ -73,8 +75,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
             }
             return retList
         }
-    protected override val emptyAttr: R
-        protected get() = ArrayList<AttributeValue>()
+    override val emptyAttr: List<AttributeValue>
+        get() = ArrayList<AttributeValue>()
 
     override fun actAddNewAttribute() {
         val recIdx = newRecIdx
@@ -88,8 +90,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
         addAttributeNodeList(nodelList)
     }
 
-    protected override val isFinalValidationOk: Boolean
-        protected get() {
+    override val isFinalValidationOk: Boolean
+        get() {
             val currentBodyNodeList = currentBodyNodeList
             for (wkNodeList in currentBodyNodeList!!) {
                 val delCheck = wkNodeList!![COL_IDX_DEL] as CheckBox
@@ -100,7 +102,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
                 if (!checkValueNode(valueNode)) {
                     val alert = Alert(AlertType.ERROR, AbsDynamoDbInputDialog.Companion.VALIDATION_MSG_INVALID_VALUE)
                     alert.showAndWait()
-                    valueNode!!.requestFocus()
+                    valueNode.requestFocus()
                     return false
                 }
             }
@@ -110,17 +112,21 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
     /*
 	 * 
 	 */
-    override fun getAttributeFromEditButtonId(btnId: String): AttributeValue? {
+    override fun getAttributeFromEditButtonId(btnId: String): AttributeValue {
         val recIndexStr: String = btnId.substring(AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX.length)
         if (recIndexStr == ADD_INDEX.toString()) {
             return tempAddAttrValue
         }
-        return if (updAttributeMap.containsKey(recIndexStr)) {
-            updAttributeMap[recIndexStr]
-        } else if (addAttributeMap!!.containsKey(recIndexStr)) {
-            addAttributeMap!![recIndexStr]
-        } else {
-            dynamoDbRecordOrg.get(Integer.valueOf(recIndexStr))
+        return when {
+            updAttributeMap.containsKey(recIndexStr) -> {
+                updAttributeMap.getOrDefault(recIndexStr, AbsDynamoDbInputDialog.NULL_ATTRIBUTE)
+            }
+            addAttributeMap.containsKey(recIndexStr) -> {
+                addAttributeMap.getOrDefault(recIndexStr, AbsDynamoDbInputDialog.NULL_ATTRIBUTE)
+            }
+            else -> {
+                dynamoDbRecordOrg[Integer.valueOf(recIndexStr)]
+            }
         }
     }
 
@@ -140,24 +146,24 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
         updAttributeMap[idStr] = attrVal
     }
 
-    protected override val addAttrEditButtonId: String
-        protected get() = AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX + ADD_INDEX.toString()
+    override val addAttrEditButtonId: String
+        get() = AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX + ADD_INDEX.toString()
 
     override fun onAddTypeComboSelChanged(oldValue: String?, newValue: String?) {
-        tempAddAttrValue = null
+        tempAddAttrValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
         updateFooter()
     }
 
     /*
 	 * 
 	 */
-    private fun getOneBodyAttributeNodeList(recIdx: Int, attrVal: AttributeValue?): List<Node?> {
+    private fun getOneBodyAttributeNodeList(recIdx: Int, attrVal: AttributeValue): List<Node> {
         val indexLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(recIdx.toString())
         val typeLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(DynamoDbUtils.Companion.getAttrTypeString(attrVal))
         val valueBox = getAtrributeBox(recIdx, attrVal)
         val delCheck = CheckBox()
         delCheck.id = AbsDynamoDbInputDialog.Companion.DEL_ID_PREFIX + recIdx.toString()
-        val nodeList: MutableList<Node?> = ArrayList()
+        val nodeList: MutableList<Node> = ArrayList()
         nodeList.add(AbsDynamoDbInputDialog.Companion.addUnderlineStyleToNode(indexLabel))
         nodeList.add(AbsDynamoDbInputDialog.Companion.addUnderlineStyleToNode(typeLabel))
         nodeList.add(AbsDynamoDbInputDialog.Companion.addUnderlineStyleToNode(valueBox))
@@ -165,7 +171,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
         return nodeList
     }
 
-    protected fun getAtrributeBox(recIndex: Int, attrVal: AttributeValue?): Node {
+    private fun getAtrributeBox(recIndex: Int, attrVal: AttributeValue): Node {
         val attrStr: String = DynamoDbUtils.Companion.getAttrString(attrVal)
         val textField = TextField(attrStr)
         if (attrVal!!.s() != null) {
@@ -174,17 +180,17 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
             textField.id = AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX + recIndex.toString()
         } else if (attrVal.b() != null) {
             textField.id = AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX + recIndex.toString()
-        } else return if (attrVal.bool() != null) {
+        } else if (attrVal.bool() != null) {
             AbsDynamoDbInputDialog.Companion.getBooleanInput(attrVal)
         } else if (DynamoDbUtils.Companion.isNullAttr(attrVal)) {
-            AbsDynamoDbInputDialog.Companion.getNullViewLabel()
+            AbsDynamoDbInputDialog.Companion.nullViewLabel
         } else {
             getAttrEditButton(recIndex, attrStr)
         }
         return textField
     }
 
-    protected fun getAttrEditButton(recIndex: Int, text: String?): Node {
+    private fun getAttrEditButton(recIndex: Int, text: String): Node {
         val idStr = recIndex.toString()
         val hbox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
         val vallabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(text)
@@ -200,17 +206,14 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue?>?, dialogTitl
         return hbox
     }
 
-    protected fun getAddAttributeMap(): MutableMap<String, AttributeValue?> {
-        if (addAttributeMap == null) {
-            addAttributeMap = HashMap()
-        }
-        return addAttributeMap!!
+    private fun getAddAttributeMap(): MutableMap<String, AttributeValue> {
+        return addAttributeMap
     }
 
-    protected val newRecIdx: Int
-        protected get() = dynamoDbRecordOrg.size + getAddAttributeMap().size
+    private val newRecIdx: Int
+        get() = dynamoDbRecordOrg.size + getAddAttributeMap().size
 
-    protected fun addValidationCheck(attrVal: AttributeValue?): Boolean {
+    private fun addValidationCheck(attrVal: AttributeValue?): Boolean {
         if (attrVal == null) {
             val alert = Alert(AlertType.ERROR, AbsDynamoDbDocumentInputDialog.Companion.VALIDATION_MSG_NO_ATTR_VALUE)
             alert.showAndWait()

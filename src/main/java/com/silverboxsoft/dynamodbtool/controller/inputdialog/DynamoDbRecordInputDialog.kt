@@ -13,23 +13,17 @@ import software.amazon.awssdk.services.dynamodb.model.*
 import software.amazon.awssdk.utils.StringUtils
 import java.util.ArrayList
 
-class DynamoDbRecordInputDialog(tableInfo: TableDescription?, dynamoDbRecord: Map<String?, AttributeValue?>?,
+class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map<String, AttributeValue>,
                                 private val editMode: DynamoDbEditMode) : DynamoDbMapInputDialog(dynamoDbRecord, "") {
-    private var tblStructColumnList: List<DynamoDbColumn?>? = ArrayList()
-    private var keyColumnSet: MutableSet<String?>? = null
-        private get() {
-            if (field == null) {
-                field = HashSet()
-            }
-            return field
-        }
+    private var tblStructColumnList: List<DynamoDbColumn> = ArrayList()
+    private var keyColumnSet: MutableSet<String> = HashSet()
     // add key info first
 
     // pick up the data which attribute name is come yet.
     // Set<String> unsetKeyNameSet = getDynamoDbRecordOrg().keySet();
-    protected override val bodyAttributeNodeList: List<List<Node?>?>
-        protected get() {
-            val retList: MutableList<List<Node?>?> = ArrayList()
+    override val bodyAttributeNodeList: List<List<Node>>
+        get() {
+            val retList: MutableList<List<Node>> = ArrayList()
             if (tblStructColumnList == null) {
                 return retList
             }
@@ -39,29 +33,31 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription?, dynamoDbRecord: Ma
 
             // add key info first
             for (colIdx in tblStructColumnList.indices) {
-                val attrName = tblStructColumnList.get(colIdx).getColumnName()
-                retList.add(getOneBodyAttributeNodeList(attrName, dynamoDbRecordOrg[attrName]))
+                val attrName = tblStructColumnList[colIdx].columnName
+                val wkAttr = dynamoDbRecordOrg.getOrDefault(attrName, AbsDynamoDbInputDialog.NULL_ATTRIBUTE)
+                retList.add(getOneBodyAttributeNodeList(attrName, wkAttr))
                 attrNameList!!.add(attrName)
             }
 
             // pick up the data which attribute name is come yet.
             // Set<String> unsetKeyNameSet = getDynamoDbRecordOrg().keySet();
-            val allAttrNameList: List<String?> = DynamoDbUtils.Companion.getSortedAttrNameList(dynamoDbRecordOrg)
-            val keyNameSet = attrNameList!!.stream().collect(Collectors.toSet())
+            val allAttrNameList: List<String> = DynamoDbUtils.Companion.getSortedAttrNameList(dynamoDbRecordOrg)
+            val keyNameSet = attrNameList.stream().collect(Collectors.toSet())
             for (newAttrName in allAttrNameList) {
                 if (keyNameSet.contains(newAttrName)) {
                     continue
                 }
-                retList.add(getOneBodyAttributeNodeList(newAttrName, dynamoDbRecordOrg[newAttrName]))
-                attrNameList!!.add(newAttrName)
+                val wkAttr = dynamoDbRecordOrg.getOrDefault(newAttrName, AbsDynamoDbInputDialog.NULL_ATTRIBUTE)
+                retList.add(getOneBodyAttributeNodeList(newAttrName, wkAttr))
+                attrNameList.add(newAttrName)
             }
             return retList
         }
 
-    override fun getOneBodyAttributeNodeList(attrName: String?, attrValue: AttributeValue?): List<Node?>? {
+    override fun getOneBodyAttributeNodeList(attrName: String, attrValue: AttributeValue): List<Node> {
         val retList = super.getOneBodyAttributeNodeList(attrName, attrValue)
-        if (keyColumnSet!!.contains(attrName)) {
-            val valNode = retList!![valueColIndex]
+        if (keyColumnSet.contains(attrName)) {
+            val valNode = retList[valueColIndex]
             if (valNode is TextField && editMode == DynamoDbEditMode.UPD) {
                 val textField = valNode
                 textField.style = "-fx-background-color: lightgray;"
