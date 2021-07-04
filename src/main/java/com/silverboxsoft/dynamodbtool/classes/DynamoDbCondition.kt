@@ -3,12 +3,9 @@ package com.silverboxsoft.dynamodbtool.classes
 import lombok.Data
 
 @Data
-class DynamoDbCondition(columnName: String, conditionType: DynamoDbConditionType, value: String) {
-    val columnName: String = columnName
-    val conditionType: DynamoDbConditionType = conditionType
-    val value: String = value
+class DynamoDbCondition(val columnName: String, private val conditionType: DynamoDbConditionType, val value: String) {
     val conditionExpression: String
-        get() = alias + conditionType.getCondStr() + ":" + columnName
+        get() = alias + conditionType.condStr + ":" + columnName
     val alias: String
         get() = "#$columnName"
 }

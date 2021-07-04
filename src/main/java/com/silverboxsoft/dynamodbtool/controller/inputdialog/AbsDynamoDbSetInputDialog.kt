@@ -155,13 +155,13 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         return nodeList
     }
 
-    companion object {
-        protected const val VALIDATION_MSG_DUP_VALUE = "Same value exists. please change the value"
-    }
-
     override fun initialize() {
         super.initialize()
         addValueNode = getAttrubuteBox(newRecIdx, initAttribute)
+    }
+
+    companion object {
+        protected const val VALIDATION_MSG_DUP_VALUE = "Same value exists. please change the value"
     }
 
     init {

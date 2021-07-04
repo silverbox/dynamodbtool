@@ -152,11 +152,11 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
         typeComboBox.valueProperty().addListener { _, oldValue, newValue -> onAddTypeComboSelChanged(oldValue, newValue) }
     }
 
-    init {
-        initTypeComboBox()
-    }
-
     companion object {
         const val VALIDATION_MSG_NO_ATTR_VALUE = "Please set attribute value."
+    }
+
+    init {
+        initTypeComboBox()
     }
 }

@@ -42,6 +42,6 @@ class DynamoDbNumberSetInputDialog(dynamoDbRecord: List<BigDecimal>, dialogTitle
     }
 
     companion object {
-        protected const val VALIDATION_MSG_NOT_NUMERIC_STR = "It's not numeric string."
+        const val VALIDATION_MSG_NOT_NUMERIC_STR = "It's not numeric string."
     }
 }
