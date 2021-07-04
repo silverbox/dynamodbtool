@@ -49,7 +49,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
             for (attrName in attrNameList) {
                 val wkAttr = dynamoDbRecordOrg.getOrDefault(attrName, NULL_ATTRIBUTE)
                 retList.add(getOneBodyAttributeNodeList(attrName, wkAttr))
-                attrNameList.plus(attrName)
+                //attrNameList.add(attrName)
             }
             return retList
         }
@@ -174,7 +174,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
         return nodeList
     }
 
-    fun getAtrributeBox(attrName: String?, attrVal: AttributeValue?): Node {
+    private fun getAtrributeBox(attrName: String?, attrVal: AttributeValue?): Node {
         val attrStr: String = DynamoDbUtils.Companion.getAttrString(attrVal)
         val textField = TextField(attrStr)
         when {
@@ -198,7 +198,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
         return textField
     }
 
-    fun getAttrEditButton(attrName: String?, text: String): HBox {
+    private fun getAttrEditButton(attrName: String?, text: String): HBox {
         val hbox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
         val vallabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(text)
         vallabel.id = AbsDynamoDbInputDialog.Companion.VALLBL_ID_PREFIX + attrName

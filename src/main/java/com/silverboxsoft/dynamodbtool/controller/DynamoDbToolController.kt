@@ -189,6 +189,7 @@ class DynamoDbToolController : Initializable {
     fun actTableDecided() {
         val tableName = lvTableList!!.selectionModel.selectedItem
         val dbtable = DynamoDbTable(connectInfo, tableName, dialog)
+        dbtable.initialize()
         val newTab = Tab()
         newTab.text = tableName
         newTab.content = dbtable
@@ -212,6 +213,7 @@ class DynamoDbToolController : Initializable {
 
     private fun initCmb() {
         cmbTableNameCond!!.items.addAll(TableNameCondType.Companion.titleList)
+        cmbTableNameCond!!.selectionModel.select(0)
     }
 
     private val connectInfo: DynamoDbConnectInfo

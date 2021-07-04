@@ -35,14 +35,14 @@
             </AnchorPane>
             <AnchorPane minHeight="0.0" minWidth="0.0" prefHeight="362.0" prefWidth="602.0">
                <children>
-                  <TableView fx:id="tableResultList" onKeyPressed="#onTableResultListKeyPressed" onMouseClicked="#onMouseClicked" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
+                  <TableView fx:id="tableResultList" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" onKeyPressed="#onTableResultListKeyPressed" onMouseClicked="#onMouseClicked" prefHeight="281.0" prefWidth="591.0" tableMenuButtonVisible="true" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0">
                      <contextMenu>
                         <ContextMenu fx:id="contextMenuTable">
                            <items>
                               <MenuItem fx:id="menuItemTableResultListCopy" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoard" text="Copy" />
                               <Menu mnemonicParsing="false" text="Advanced Copy">
                                 <items>
-                                  <MenuItem fx:id="menuItemTableResultListCopyWithQuotation" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoardQuatation" text="Copy with quotation" />
+                                  <MenuItem fx:id="menuItemTableResultListCopyWithQuotation" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoardQuotation" text="Copy with quotation" />
                                     <MenuItem fx:id="menuItemTableResultListCopyInJsonFormat" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoardJson" text="Copy in JSON format" />
                                 </items>
                               </Menu>

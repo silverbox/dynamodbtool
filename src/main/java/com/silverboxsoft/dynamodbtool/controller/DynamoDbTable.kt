@@ -103,7 +103,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     var hasSortKey = false
     var dynamoDbResult: DynamoDbResult = DynamoDbResult(ArrayList(), tableInfo)
 
-    init {
+    fun initialize() {
         try {
             setCurrentTableInfo()
             doQueryDao(DYMMY_COND_VALUE)
@@ -317,16 +317,20 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
             val wkColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
             val wkCellStr = tableResultList!!.items[wkRow].getData()[wkColIdx]
             val cellStr = escapedItemStr(colName, wkCellStr, type)
-            if (oldRow != wkRow) {
-                selectedRowStrSb.append(lineWrapStr(type, false))
-                selectedRowStrSb.append(lineSepStr(type))
-                selectedRowStrSb.append(lineWrapStr(type, true))
-                selectedRowStrSb.append(cellStr)
-            } else if (selectedRowStrSb.isEmpty()) {
-                selectedRowStrSb.append(lineWrapStr(type, true))
-                selectedRowStrSb.append(cellStr)
-            } else {
-                selectedRowStrSb.append(itemSepStr(type)).append(cellStr)
+            when {
+                oldRow != wkRow -> {
+                    selectedRowStrSb.append(lineWrapStr(type, false))
+                    selectedRowStrSb.append(lineSepStr(type))
+                    selectedRowStrSb.append(lineWrapStr(type, true))
+                    selectedRowStrSb.append(cellStr)
+                }
+                selectedRowStrSb.isEmpty() -> {
+                    selectedRowStrSb.append(lineWrapStr(type, true))
+                    selectedRowStrSb.append(cellStr)
+                }
+                else -> {
+                    selectedRowStrSb.append(itemSepStr(type)).append(cellStr)
+                }
             }
             oldRow = position.value
         }
@@ -357,7 +361,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
         }
         val selectedRowStrSb = StringBuilder()
         for (record in selectedRecords) {
-            if (selectedRowStrSb.length > 0) {
+            if (selectedRowStrSb.isNotEmpty()) {
                 selectedRowStrSb.append(lineSepStr(type))
             }
             selectedRowStrSb.append(lineWrapStr(type, true))
@@ -461,6 +465,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     @Throws(URISyntaxException::class)
     private fun doUpdate(dataIndex: Int, rec: Map<String, AttributeValue>) {
         val dialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.UPD)
+        dialog.initialize()
         val newRecWk = dialog.showAndWait()
         if (newRecWk.isPresent) {
             val newRec = newRecWk.get()
@@ -546,8 +551,8 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     private fun setTable(result: DynamoDbResult) {
         tableResultList!!.items.clear()
         tableResultList!!.columns.clear()
-        for (colIdx in 0 until result.columnCount) {
-            val columnName = result!!.getDynamoDbColumn(colIdx).columnName
+        for (colIdx in 0 until result.columnCount - 1) {
+            val columnName = result.getDynamoDbColumn(colIdx).columnName
             val dataCol = getTableColumn(columnName, colIdx)
             dataCol.setCellFactory(TextFieldTableCell.forTableColumn())
             dataCol.maxWidth = TBL_COL_MAX_WIDTH.toDouble()
@@ -556,9 +561,9 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
         tableResultList!!.items.addAll(result.resultItems)
     }
 
-    private fun getTableColumn(columnName: String, finalColIdx: Int): TableColumn<DynamoDbViewRecord?, String> {
-        val dataCol = TableColumn<DynamoDbViewRecord?, String>(columnName)
-        dataCol.setCellValueFactory { param: TableColumn.CellDataFeatures<DynamoDbViewRecord?, String>
+    private fun getTableColumn(columnName: String, finalColIdx: Int): TableColumn<DynamoDbViewRecord, String> {
+        val dataCol = TableColumn<DynamoDbViewRecord, String>(columnName)
+        dataCol.setCellValueFactory { param: TableColumn.CellDataFeatures<DynamoDbViewRecord, String>
             -> ReadOnlyObjectWrapper(param.value!!.getData()[finalColIdx]) }
         dataCol.id = columnName
         return dataCol

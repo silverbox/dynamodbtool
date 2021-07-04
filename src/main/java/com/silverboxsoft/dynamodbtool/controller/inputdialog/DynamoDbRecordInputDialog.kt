@@ -87,7 +87,7 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
         if (!super.checkValueNode(valueNode)) {
             return false
         }
-        if (keyColumnSet!!.contains(attrName) && valueNode is TextField) {
+        if (keyColumnSet.contains(attrName) && valueNode is TextField) {
             if (StringUtils.isEmpty(valueNode.text)) {
                 val alert = Alert(AlertType.ERROR, VALIDATION_MSG_EMPTY_VALUE)
                 alert.showAndWait()
@@ -98,14 +98,14 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
     }
 
     companion object {
-        protected const val VALIDATION_MSG_EMPTY_VALUE = "Key value should be non null."
+        const val VALIDATION_MSG_EMPTY_VALUE = "Key value should be non null."
     }
 
     init {
         this.title = DynamoDbUtils.Companion.getKeyValueStr(tableInfo, dynamoDbRecord)
         tblStructColumnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
-        val keyInfos = tableInfo!!.keySchema()
-        keyInfos.stream().forEach { elem: KeySchemaElement -> keyColumnSet!!.add(elem.attributeName()) }
-        initialize() // TODO work around
+        val keyInfos = tableInfo.keySchema()
+        keyInfos.stream().forEach { elem: KeySchemaElement -> keyColumnSet.add(elem.attributeName()) }
+        // initialize() // TODO work around
     }
 }

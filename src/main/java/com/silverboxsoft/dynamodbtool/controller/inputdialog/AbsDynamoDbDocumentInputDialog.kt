@@ -13,7 +13,7 @@ import java.util.function.Function
 
 abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle: String)
     : AbsDynamoDbInputDialog<T>(dynamoDbRecord, dialogTitle) {
-    var typeComboBox: ComboBox<String?> = getInitTypeComboBox()
+    val typeComboBox: ComboBox<String?> = ComboBox<String?>()
 
     /*
 	 * for open attribute edit dialog
@@ -34,11 +34,12 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
     protected fun actOpenEditDialog(btnId: String) {
         val title = this.title + " > " + getTitleAppendStr(btnId)
         var attrVal = getAttributeFromEditButtonId(btnId)
-        if (attrVal == null && btnId == addAttrEditButtonId) {
+        if (btnId == addAttrEditButtonId) {
             attrVal = selectedAddType.initValue
         }
-        if (attrVal!!.hasSs()) {
+        if (attrVal.hasSs()) {
             val dialog = DynamoDbStringSetInputDialog(attrVal.ss(), title)
+            dialog.initialize()
             val newRec = dialog.showAndWait()
             if (newRec.isPresent) {
                 val attrValue = AttributeValue.builder().ss(newRec.get()).build()
@@ -49,6 +50,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
                     .map(Function<String, BigDecimal> { strval: String? -> DynamoDbUtils.Companion.getBigDecimal(strval) })
                     .collect(Collectors.toList())
             val dialog = DynamoDbNumberSetInputDialog(setList, title)
+            dialog.initialize()
             val newRec = dialog.showAndWait()
             if (newRec.isPresent) {
                 val numStrList = newRec.get().stream()
@@ -59,6 +61,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
             }
         } else if (attrVal.hasBs()) {
             val dialog = DynamoDbBinarySetInputDialog(attrVal.bs(), title)
+            dialog.initialize()
             val newRec = dialog.showAndWait()
             if (newRec.isPresent) {
                 val attrValue = AttributeValue.builder().bs(newRec.get()).build()
@@ -66,6 +69,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
             }
         } else if (attrVal.hasM()) {
             val dialog = DynamoDbMapInputDialog(attrVal.m(), title)
+            dialog.initialize()
             val newRec = dialog.showAndWait()
             if (newRec.isPresent) {
                 val attrValue = AttributeValue.builder().m(newRec.get()).build()
@@ -73,6 +77,7 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
             }
         } else if (attrVal.hasL()) {
             val dialog = DynamoDbListInputDialog(attrVal.l(), title)
+            dialog.initialize()
             val newRec = dialog.showAndWait()
             if (newRec.isPresent) {
                 val attrValue = AttributeValue.builder().l(newRec.get()).build()
@@ -137,16 +142,18 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
             return DynamoDbColumnType.Companion.getColumnType(selStr)
         }
 
-    fun getInitTypeComboBox(): ComboBox<String?> {
-        typeComboBox = ComboBox<String?>()
-        typeComboBox!!.isEditable = false
-        typeComboBox!!.items.clear()
+    private fun initTypeComboBox() {
+        typeComboBox.isEditable = false
+        typeComboBox.items.clear()
         for (type in DynamoDbColumnType.values()) {
-            typeComboBox!!.items.add(type.displayStr)
+            typeComboBox.items.add(type.displayStr)
         }
-        typeComboBox!!.setValue(typeComboBox!!.items[0])
-        typeComboBox!!.valueProperty().addListener { _, oldValue, newValue -> onAddTypeComboSelChanged(oldValue, newValue) }
-        return typeComboBox as ComboBox<String?>
+        typeComboBox.value = typeComboBox.items[0]
+        typeComboBox.valueProperty().addListener { _, oldValue, newValue -> onAddTypeComboSelChanged(oldValue, newValue) }
+    }
+
+    init {
+        initTypeComboBox()
     }
 
     companion object {

@@ -7,16 +7,16 @@ import lombok.experimental.Builder
 
 @Data
 @Builder
-class DynamoDbViewRecord(private val indexPrm: Int, private val dataPrm: List<String>) {
+class DynamoDbViewRecord(private val indexPrm: Int, private val dataPrm: MutableList<String>) {
     private val index: Int = indexPrm
-    private var data: List<String> = dataPrm
+    private var data: MutableList<String> = dataPrm
     fun getIndex(): Int {
         return index
     }
-    fun setData(newData: List<String>){
+    fun setData(newData: MutableList<String>){
         this.data = newData
     }
-    fun getData(): List<String> {
+    fun getData(): MutableList<String> {
         return data
     }
 }

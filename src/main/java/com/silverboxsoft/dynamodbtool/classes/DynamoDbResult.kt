@@ -22,13 +22,13 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
         }
     }
 
-    private fun initilize(items: List<Map<String, AttributeValue>>) {
+    private fun initialize(items: List<Map<String, AttributeValue>>) {
         for (resItem in items) {
             addRecord(resItem)
         }
     }
 
-    fun prepareOneTableRecord(resItem: Map<String, AttributeValue>): ObservableList<String> {
+    private fun prepareOneTableRecord(resItem: Map<String, AttributeValue>): ObservableList<String> {
         val record = FXCollections.observableArrayList<String>()
 
         // pick up data which attribute name is set.
@@ -53,7 +53,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
     }
 
     private fun fillNewColumn() {
-        resItems.stream().forEach { rec: DynamoDbViewRecord -> rec.getData().plus(DynamoDbUtils.Companion.NO_VALSTR) }
+        resItems.stream().forEach { rec: DynamoDbViewRecord -> rec.getData().add(DynamoDbUtils.Companion.NO_VALSTR) }
     }
 
     val columnCount: Int
@@ -98,6 +98,6 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
 
     init {
         prepareKeyInfo(tableInfo)
-        initilize(items)
+        initialize(items)
     }
 }

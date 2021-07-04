@@ -6,6 +6,7 @@ import javafx.scene.control.Alert
 import javafx.scene.control.Alert.AlertType
 import java.util.HashSet
 import javafx.scene.Node
+import javafx.scene.control.TextField
 import java.util.ArrayList
 
 abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle: String)
@@ -13,7 +14,7 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
     /*
 	 * accessor
 	 */
-    protected var addValueNode: Node = getAttrubuteBox(newRecIdx, initAttribute)
+    protected var addValueNode: Node = TextField() //dummy
     private var addAttributeMap: MutableMap<String, T> = HashMap()
     override val headerWidthList: List<Int>
         get() {
@@ -122,22 +123,22 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
     /*
 	 * 
 	 */
-    val newRecIdx: Int
+    private val newRecIdx: Int
         get() = dynamoDbRecordOrg.size + getAddAttributeMap().size
 
-    fun getAddAttributeMap(): Map<String, T> {
+    private fun getAddAttributeMap(): Map<String, T> {
         return addAttributeMap
     }
 
     fun validationCheck(attrVal: T): Boolean {
         val currentBodyNodeList = currentBodyNodeList
-        for (wkNodeList in currentBodyNodeList!!) {
+        for (wkNodeList in currentBodyNodeList) {
             val valuebox = wkNodeList!![0]
             val wkAttr = getCurrentAttrubuteValue(valuebox)
             if (isSameValue(wkAttr, attrVal)) {
                 val alert = Alert(AlertType.ERROR, VALIDATION_MSG_DUP_VALUE)
                 alert.showAndWait()
-                addValueNode!!.requestFocus()
+                addValueNode.requestFocus()
                 return false
             }
         }
@@ -156,6 +157,11 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
 
     companion object {
         protected const val VALIDATION_MSG_DUP_VALUE = "Same value exists. please change the value"
+    }
+
+    override fun initialize() {
+        super.initialize()
+        addValueNode = getAttrubuteBox(newRecIdx, initAttribute)
     }
 
     init {

@@ -58,11 +58,16 @@ class TableListDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
         if (StringUtils.isEmpty(condition)) {
             return true
         }
-        if (conditionType == TableNameCondType.PARTIAL_MATCH) {
-            return targetStr.indexOf(condition) >= 0
-        } else if (conditionType == TableNameCondType.HEAD_MATCH) {
-            return targetStr.startsWith(condition)
+        return when (conditionType) {
+            TableNameCondType.PARTIAL_MATCH -> {
+                targetStr.indexOf(condition) >= 0
+            }
+            TableNameCondType.HEAD_MATCH -> {
+                targetStr.startsWith(condition)
+            }
+            TableNameCondType.TAIL_MATCH -> {
+                targetStr.endsWith(condition)
+            }
         }
-        return targetStr.endsWith(condition)
     }
 }

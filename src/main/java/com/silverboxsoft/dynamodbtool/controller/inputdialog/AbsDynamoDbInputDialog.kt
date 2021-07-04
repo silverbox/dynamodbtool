@@ -134,7 +134,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         dialogPane.content = borderPane
     }
 
-    protected fun initialize() {
+    fun innerInitialize() {
         headGridPane.children.clear()
         val labelList = headerLabelList
         for (cIdx in labelList.indices) {
@@ -204,6 +204,12 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         for (cIdx in footerNode.indices) {
             footGridPane.add(footerNode[cIdx], cIdx, 0)
         }
+    }
+
+    open fun initialize(){
+        innerInitialize()
+        setColumnConstraints()
+        setupScreen()
     }
 
     companion object {
@@ -294,8 +300,6 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         footGridPane = GridPane()
         addButton = Button("Add")
         setupComponent()
-        initialize()
-        setColumnConstraints()
-        setupScreen()
+        // initialize()
     }
 }
