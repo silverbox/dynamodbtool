@@ -1,25 +1,20 @@
 package com.silverboxsoft.dynamodbtool.controller
 
+import com.silverboxsoft.dynamodbtool.classes.*
 import kotlin.Throws
 import java.lang.Exception
 import java.io.IOException
 import javafx.fxml.FXMLLoader
 import javafx.scene.layout.AnchorPane
 import javafx.beans.value.ObservableValue
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbConnectInfo
 import java.net.URISyntaxException
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbResult
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionJoinType
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbCondition
 import java.util.HashMap
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbViewRecord
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbConditionType
 import javafx.scene.control.Alert.AlertType
 import java.util.HashSet
 import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog
 import javafx.fxml.FXML
-import com.silverboxsoft.dynamodbtool.classes.DynamoDbErrorInfo
+import com.silverboxsoft.dynamodbtool.consts.Messages
 import com.silverboxsoft.dynamodbtool.dao.PartiQLDao
 import com.silverboxsoft.dynamodbtool.dao.ScanDao
 import javafx.concurrent.WorkerStateEvent
@@ -83,7 +78,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     var menuItemTableResultListCopy: MenuItem? = null
 
     @FXML
-    var menuItemTableResultListCopyWithQuotation: MenuItem? = null
+    var menuItemTableResultListCopyToClipBoardWhereCondition: MenuItem? = null
 
     @FXML
     var menuItemTableResultListCopyInJsonFormat: MenuItem? = null
@@ -237,8 +232,13 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     }
 
     @FXML
-    protected fun actTableLineCopyToClipBoardQuotation(ev: ActionEvent?) {
-        copyToClipBoardSub(CopyModeType.QUOTATION)
+    protected fun actTableLineCopyToClipBoardWhereCondition(ev: ActionEvent?) {
+        if (tableResultList!!.selectionModel.isCellSelectionEnabled) {
+            copyToClipBoardSub(CopyModeType.WHERE)
+        } else {
+            val alert = Alert(AlertType.ERROR, Messages.ERR_MSG_CLIPBOARD_NOT_CELL_SELECT)
+            alert.show()
+        }
     }
 
     @FXML
@@ -277,8 +277,8 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     }
 
     /*
-	 * normal methods
-	 */
+     * normal methods
+     */
     @Throws(URISyntaxException::class)
     private fun setCurrentTableInfo() {
         setCurrentTableInfoVariable()
@@ -293,11 +293,36 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
         if (selectedModel.selectedItems.size == 0) {
             return
         }
+        if (type == CopyModeType.WHERE) {
+            if  (!tableResultList!!.selectionModel.isCellSelectionEnabled) {
+                val alert = Alert(AlertType.ERROR, Messages.ERR_MSG_CLIPBOARD_NOT_CELL_SELECT)
+                alert.show()
+                return
+            }
+            if (getSelectedColumnList().size > 1){
+                val alert = Alert(AlertType.ERROR, Messages.ERR_MSG_CLIPBOARD_MULTI_CELL_SELECTED)
+                alert.show()
+                return
+            }
+        }
+
         var targetStr: String? = null
         targetStr = if (tableResultList!!.selectionModel.isCellSelectionEnabled) {
             getWholeTableSelectedCellString(selectedModel, type)
         } else {
             getWholeTableSelectedRowString(selectedModel, type)
+        }
+        if (type == CopyModeType.WHERE) {
+            val sb = StringBuilder(" where ")
+            getSelectedColumnList().forEach {
+                colIdx ->
+                run {
+                    val colName = tableResultList!!.columns[colIdx].id
+                    sb.append(colName)
+                }
+            }
+            sb.append(" in (").append(targetStr).append(")")
+            targetStr = sb.toString()
         }
         if (targetStr != null) {
             content.putString(targetStr)
@@ -306,7 +331,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     }
 
     private fun getWholeTableSelectedCellString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord>,
-                                                type: CopyModeType): String {
+                                                copyMode: CopyModeType): String {
         val posList = getPositionList(selectedModel)
         val selectedRowStrSb = StringBuilder()
         var oldRow = posList[0].value
@@ -315,35 +340,36 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
             val wkRow = position.value
             val colName = tableResultList!!.columns[wkCol].id
             val wkColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
+            val colType = dynamoDbResult!!.getDynamoDbColumn(wkColIdx).columnType
             val wkCellStr = tableResultList!!.items[wkRow].getData()[wkColIdx]
-            val cellStr = escapedItemStr(colName, wkCellStr, type)
+            val cellStr = escapedItemStr(colName, colType, wkCellStr, copyMode)
             when {
                 oldRow != wkRow -> {
-                    selectedRowStrSb.append(lineWrapStr(type, false))
-                    selectedRowStrSb.append(lineSepStr(type))
-                    selectedRowStrSb.append(lineWrapStr(type, true))
+                    selectedRowStrSb.append(lineWrapStr(copyMode, false))
+                    selectedRowStrSb.append(lineSepStr(copyMode))
+                    selectedRowStrSb.append(lineWrapStr(copyMode, true))
                     selectedRowStrSb.append(cellStr)
                 }
                 selectedRowStrSb.isEmpty() -> {
-                    selectedRowStrSb.append(lineWrapStr(type, true))
+                    selectedRowStrSb.append(lineWrapStr(copyMode, true))
                     selectedRowStrSb.append(cellStr)
                 }
                 else -> {
-                    selectedRowStrSb.append(itemSepStr(type)).append(cellStr)
+                    selectedRowStrSb.append(itemSepStr(copyMode)).append(cellStr)
                 }
             }
             oldRow = position.value
         }
         if (selectedRowStrSb.isNotEmpty()) {
-            selectedRowStrSb.append(lineWrapStr(type, false))
+            selectedRowStrSb.append(lineWrapStr(copyMode, false))
         }
-        selectedRowStrSb.insert(0, allLineWrapStr(type, true))
-        selectedRowStrSb.append(allLineWrapStr(type, false))
+        selectedRowStrSb.insert(0, allLineWrapStr(copyMode, true))
+        selectedRowStrSb.append(allLineWrapStr(copyMode, false))
         return selectedRowStrSb.toString()
     }
 
     private fun getWholeTableSelectedRowString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord>,
-                                               type: CopyModeType): String {
+                                               copyMode: CopyModeType): String {
         val selectedRecords = selectedModel.selectedItems
         if (selectedRecords.size == 0) {
             return ""
@@ -362,24 +388,27 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
         val selectedRowStrSb = StringBuilder()
         for (record in selectedRecords) {
             if (selectedRowStrSb.isNotEmpty()) {
-                selectedRowStrSb.append(lineSepStr(type))
+                selectedRowStrSb.append(lineSepStr(copyMode))
             }
-            selectedRowStrSb.append(lineWrapStr(type, true))
-            selectedRowStrSb.append(getOneRowString(colNameList, record, type))
-            selectedRowStrSb.append(lineWrapStr(type, false))
+            selectedRowStrSb.append(lineWrapStr(copyMode, true))
+            selectedRowStrSb.append(getOneRowString(colNameList, record, copyMode))
+            selectedRowStrSb.append(lineWrapStr(copyMode, false))
         }
         return selectedRowStrSb.toString()
     }
 
-    private fun getOneRowString(colNameList: List<String>, record: DynamoDbViewRecord, type: CopyModeType): String {
+    private fun getOneRowString(colNameList: List<String>, record: DynamoDbViewRecord, copyMode: CopyModeType): String {
         val oneRowStrSb = StringBuilder()
         for (colIdx in record.getData().indices) {
             val item = record.getData()[colIdx]
             val wkItemStr = record.getData()[colIdx]
             if (oneRowStrSb.isNotEmpty()) {
-                oneRowStrSb.append(itemSepStr(type))
+                oneRowStrSb.append(itemSepStr(copyMode))
             }
-            oneRowStrSb.append(escapedItemStr(colNameList[colIdx], wkItemStr, type))
+            val colName = colNameList[colIdx]
+            val wkColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
+            val colType = dynamoDbResult!!.getDynamoDbColumn(wkColIdx).columnType
+            oneRowStrSb.append(escapedItemStr(colName, colType, wkItemStr, copyMode))
         }
         return oneRowStrSb.toString()
     }
@@ -404,46 +433,45 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
         } else ""
     }
 
-    private fun lineSepStr(type: CopyModeType): String {
-        return if (type == CopyModeType.JSON) {
-            ","
-        } else if (type == CopyModeType.QUOTATION) {
-            "\n"
-        } else {
-            "\n"
+    private fun lineSepStr(copyMode: CopyModeType): String {
+        return when(copyMode){
+            CopyModeType.JSON -> ","
+            CopyModeType.WHERE -> ","
+            else -> "\n"
         }
     }
 
-    private fun itemSepStr(type: CopyModeType): String {
-        return if (type == CopyModeType.JSON) {
-            ","
-        } else if (type == CopyModeType.QUOTATION) {
-            ","
-        } else {
-            "\t"
+    private fun itemSepStr(copyMode: CopyModeType): String {
+        return when(copyMode){
+            CopyModeType.JSON -> ","
+            CopyModeType.WHERE -> ","
+            else -> "\t"
         }
     }
 
-    private fun escapedItemStr(colName: String, orgStr: String, type: CopyModeType): String {
+    private fun escapedItemStr(colName: String, columnType: DynamoDbColumnType, orgStr: String, copyMode: CopyModeType): String {
         val retStrSb = StringBuilder()
-        if (type == CopyModeType.JSON) {
-            retStrSb.append("\"")
-            retStrSb.append(colName)
-            retStrSb.append("\":\"")
-            retStrSb.append(orgStr.replace("\"".toRegex(), "\\\""))
-            retStrSb.append("\"")
-        } else if (type == CopyModeType.QUOTATION) {
-            retStrSb.append("'")
-            retStrSb.append(orgStr.replace("'".toRegex(), "''"))
-            retStrSb.append("'")
-        } else {
-            retStrSb.append(orgStr)
+        when(copyMode){
+            CopyModeType.JSON -> {
+                retStrSb.append("\"")
+                retStrSb.append(colName)
+                retStrSb.append("\":\"")
+                retStrSb.append(orgStr.replace("\"".toRegex(), "\\\""))
+                retStrSb.append("\"")
+            }
+            CopyModeType.WHERE -> {
+                val quotation = if (columnType == DynamoDbColumnType.STRING) "'" else ""
+                retStrSb.append(quotation)
+                retStrSb.append(orgStr.replace("'".toRegex(), "''"))
+                retStrSb.append(quotation)
+            }
+            else -> retStrSb.append(orgStr)
         }
         return retStrSb.toString()
     }
 
     private val currentDataIndex: Int
-        private get() {
+        get() {
             val selectedModel = tableResultList!!.selectionModel
             val selRec = selectedModel.selectedItem ?: return -1
             return selRec.getIndex()
@@ -508,16 +536,26 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
             posList.add(Pair(position.column, position.row))
         }
         return posList.sortedWith(java.util.Comparator { o1, o2 ->
-            val rowdiff = o1.value - o2.value
-            if (rowdiff != 0) {
-                rowdiff
+            val rowDiff = o1.value - o2.value
+            if (rowDiff != 0) {
+                rowDiff
             } else o1.key - o2.key
         })
     }
 
+    private fun getSelectedColumnList(): HashSet<Int> {
+        val selectedModel = tableResultList!!.selectionModel
+        val colIdxSet = HashSet<Int>()
+        val selPosList = selectedModel.selectedCells
+        for (position in selPosList) {
+            colIdxSet.add(position.column)
+        }
+        return colIdxSet
+    }
+
     private fun setCurrentTableInfoVariable() {
-        val keyInfos = tableInfo.keySchema()
-        for (k in keyInfos) {
+        val keyInfo = tableInfo.keySchema()
+        for (k in keyInfo) {
             if (k.keyType() == KeyType.HASH) {
                 partitionKeyName = k.attributeName()
             } else if (k.keyType() == KeyType.RANGE) {

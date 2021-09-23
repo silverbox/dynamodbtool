@@ -21,28 +21,19 @@ enum class DynamoDbColumnType(//
 
     val initValue: AttributeValue
         get() {
-            if (this == STRING) {
-                return AttributeValue.builder().s("").build()
-            } else if (this == NUMBER) {
-                return AttributeValue.builder().n("0").build()
-            } else if (this == BOOLEAN) {
-                return AttributeValue.builder().bool(true).build()
-            } else if (this == BINARY) {
-                return AttributeValue.builder().b(SdkBytes.fromByteArray(ByteArray(0))).build()
-            } else if (this == NULL) {
-                return AttributeValue.builder().nul(true).build()
-            } else if (this == STRING_SET) {
-                return AttributeValue.builder().ss().build()
-            } else if (this == NUMBER_SET) {
-                return AttributeValue.builder().ns().build()
-            } else if (this == BINARY_SET) {
-                return AttributeValue.builder().bs().build()
-            } else if (this == LIST) {
-                return AttributeValue.builder().l(ArrayList()).build()
-            } else if (this == MAP) {
-                return AttributeValue.builder().m(HashMap()).build()
+            return when(this){
+                STRING -> AttributeValue.builder().s("").build()
+                NUMBER -> AttributeValue.builder().n("0").build()
+                BOOLEAN -> AttributeValue.builder().bool(true).build()
+                BINARY -> AttributeValue.builder().b(SdkBytes.fromByteArray(ByteArray(0))).build()
+                NULL -> AttributeValue.builder().nul(true).build()
+                STRING_SET -> AttributeValue.builder().ss().build()
+                NUMBER_SET -> AttributeValue.builder().ns().build()
+                BINARY_SET -> AttributeValue.builder().bs().build()
+                LIST -> AttributeValue.builder().l(ArrayList()).build()
+                MAP -> AttributeValue.builder().m(HashMap()).build()
+                else -> AttributeValue.builder().s("").build()
             }
-            return AttributeValue.builder().s("").build()
         }
 
     companion object {

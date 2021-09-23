@@ -42,7 +42,7 @@
                               <MenuItem fx:id="menuItemTableResultListCopy" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoard" text="Copy" />
                               <Menu mnemonicParsing="false" text="Advanced Copy">
                                 <items>
-                                  <MenuItem fx:id="menuItemTableResultListCopyWithQuotation" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoardQuotation" text="Copy with quotation" />
+                                  <MenuItem fx:id="menuItemTableResultListCopyToClipBoardWhereCondition" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoardWhereCondition" text="Copy as 'where' condition" />
                                     <MenuItem fx:id="menuItemTableResultListCopyInJsonFormat" mnemonicParsing="false" onAction="#actTableLineCopyToClipBoardJson" text="Copy in JSON format" />
                                 </items>
                               </Menu>
