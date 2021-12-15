@@ -7,6 +7,7 @@ import java.util.stream.Collectors
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnType
 import java.math.BigDecimal
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbIndex
 import java.lang.NumberFormatException
 
 import software.amazon.awssdk.services.dynamodb.model.*
@@ -151,9 +152,22 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
             }
         }
 
-        /*
-	 * sdkbytes converter
-	 */
+        fun getIndexInfo(indexName: String, keyInfo: List<KeySchemaElement>): DynamoDbIndex {
+            var partitionKeyName: String = ""
+            var sortKeyName: String? = null
+            for (k in keyInfo) {
+                if (k.keyType() == KeyType.HASH) {
+                    partitionKeyName = k.attributeName()
+                } else if (k.keyType() == KeyType.RANGE) {
+                    sortKeyName = k.attributeName()
+                }
+            }
+            return DynamoDbIndex(indexName, partitionKeyName, sortKeyName)
+        }
+
+        /**
+         * sdkbytes converter
+	     */
         fun getBase64StringFromSdkBytes(sdkByte: SdkBytes): String {
             return Base64.getEncoder().encodeToString(sdkByte.asByteArray())
         }
@@ -163,9 +177,9 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
             return SdkBytes.fromByteArray(byteAry)
         }
 
-        /*
-	 * number converter
-	 */
+        /**
+         * number converter
+         */
         fun getNumStr(num: BigDecimal?): String {
             return num.toString()
         }
@@ -189,66 +203,64 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
 
         fun getKeyValueStr(tableInfo: TableDescription?, dynamoDbRecord: Map<String, AttributeValue>): String {
             val sb = StringBuilder()
-            var partitionKeyElem: KeySchemaElement? = null
-            var sortKeyElem: KeySchemaElement? = null
-            val keyInfos = tableInfo!!.keySchema()
+
+            val keyInfoList = tableInfo!!.keySchema()
             // prepare Key Info
-            for (k in keyInfos) {
-                if (k.keyType() == KeyType.HASH) {
-                    partitionKeyElem = k
-                } else if (k.keyType() == KeyType.RANGE) {
-                    sortKeyElem = k
-                }
-            }
-            sb.append(getAttrString(dynamoDbRecord!![partitionKeyElem!!.attributeName()]))
-            if (sortKeyElem != null) {
+            val indexInfo = getIndexInfo(tableInfo.tableName(), keyInfoList)
+            sb.append(getAttrString(dynamoDbRecord!![indexInfo.hashKey]))
+            if (indexInfo.sortKey != null) {
                 sb.append(" - ")
-                sb.append(getAttrString(dynamoDbRecord[sortKeyElem.attributeName()]))
+                sb.append(getAttrString(dynamoDbRecord[indexInfo.sortKey]))
             }
             return sb.toString()
         }
 
         fun getSortedDynamoDbColumnList(tableInfo: TableDescription?): MutableList<DynamoDbColumn> {
-            var partitionKeyElem: KeySchemaElement? = null
-            var sortKeyElem: KeySchemaElement? = null
             val columnList: MutableList<DynamoDbColumn> = ArrayList()
             val colNameIndex: MutableMap<String, Int> = HashMap()
-            val keyInfos = tableInfo!!.keySchema()
-            // prepare Key Info
-            for (k in keyInfos) {
-                if (k.keyType() == KeyType.HASH) {
-                    partitionKeyElem = k
-                } else if (k.keyType() == KeyType.RANGE) {
-                    sortKeyElem = k
-                }
-            }
+            val keyInfoList = tableInfo!!.keySchema()
+            val indexInfo = getIndexInfo(tableInfo.tableName(), keyInfoList)
+
             var isPartitionKeySet = false
-            val wkGsiColMap: MutableMap<String, DynamoDbColumn> = HashMap()
+            val wkSiColMap: MutableMap<String, DynamoDbColumn> = HashMap()
             // at first, set key column info
             for (attr in tableInfo.attributeDefinitions()) {
                 val colName = attr.attributeName()
                 val dbCol = DynamoDbColumn(colName, getDynamoDbColumnType(attr))
-                if (colName == partitionKeyElem!!.attributeName()) {
+                if (colName == indexInfo.hashKey) {
                     colNameIndex[colName] = 0
                     columnList.add(0, dbCol)
                     isPartitionKeySet = true
-                } else if (colName == sortKeyElem!!.attributeName()) {
+                } else if (indexInfo.sortKey != null && colName == indexInfo.sortKey) {
                     colNameIndex[colName] = 1
                     columnList.add(if (isPartitionKeySet) 1 else 0, dbCol)
                 } else {
-                    wkGsiColMap[colName] = dbCol
+                    wkSiColMap[colName] = dbCol
                 }
             }
 
             // add global secondary index
-            val dummyDbCol = DynamoDbColumn("dummy", DynamoDbColumnType.NULL)
             for (gsiDesc in tableInfo.globalSecondaryIndexes()) {
-                val wkKeyInfos = gsiDesc.keySchema()
-                for (kse in wkKeyInfos) {
+                val wkKeyInfoList = gsiDesc.keySchema()
+                for (kse in wkKeyInfoList) {
                     val gsiColName = kse.attributeName()
                     if (!colNameIndex.containsKey(gsiColName)) {
+                        val dummyDbCol = DynamoDbColumn(gsiColName, DynamoDbColumnType.NULL)
                         colNameIndex[gsiColName] = columnList.size
-                        columnList.add(wkGsiColMap.getOrDefault(gsiColName, dummyDbCol))
+                        columnList.add(wkSiColMap.getOrDefault(gsiColName, dummyDbCol))
+                    }
+                }
+            }
+
+            // add global secondary index
+            for (lsiDesc in tableInfo.localSecondaryIndexes()) {
+                val wkKeyInfoList = lsiDesc.keySchema()
+                for (kse in wkKeyInfoList) {
+                    val lsiColName = kse.attributeName()
+                    if (!colNameIndex.containsKey(lsiColName)) {
+                        val dummyDbCol = DynamoDbColumn(lsiColName, DynamoDbColumnType.NULL)
+                        colNameIndex[lsiColName] = columnList.size
+                        columnList.add(wkSiColMap.getOrDefault(lsiColName, dummyDbCol))
                     }
                 }
             }

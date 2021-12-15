@@ -71,6 +71,10 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
         return columnList[index]
     }
 
+    fun getDynamoDbColumnList(): List<DynamoDbColumn> {
+        return columnList
+    }
+
     fun addRecord(newRec: Map<String, AttributeValue>): DynamoDbViewRecord {
         rawResItems.add(newRec)
         val data = prepareOneTableRecord(newRec)

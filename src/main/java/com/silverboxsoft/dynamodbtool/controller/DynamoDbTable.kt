@@ -25,6 +25,7 @@ import javafx.scene.control.TableView.TableViewSelectionModel
 import com.silverboxsoft.dynamodbtool.dao.PutItemDao
 import com.silverboxsoft.dynamodbtool.dao.DeleteItemDao
 import com.silverboxsoft.dynamodbtool.dao.QueryDao
+import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils.Companion.getIndexInfo
 import javafx.scene.control.cell.TextFieldTableCell
 import javafx.beans.property.ReadOnlyObjectWrapper
 import java.lang.RuntimeException
@@ -40,7 +41,7 @@ import software.amazon.awssdk.utils.StringUtils
 import java.lang.StringBuilder
 import java.util.ArrayList
 
-class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableName: String, private val dialog: Alert) : AnchorPane() {
+class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val tableName: String, private val dialog: Alert) : AnchorPane() {
     /*
 	 * Data Condition
 	 */
@@ -93,15 +94,16 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
      */
     private val tableNameDao = TableInfoDao(connInfo)
     val tableInfo: TableDescription = tableNameDao.getTableDescription(tableName)
-    var partitionKeyName: String = ""
-    var sortKeyName: String? = null
-    var hasSortKey = false
+    var mainKeyInfo: DynamoDbIndex = DynamoDbIndex("", "", "")
+    var gsiInfoList: List<DynamoDbIndex> = ArrayList()
+    var lsiInfoList: List<DynamoDbIndex> = ArrayList()
     var dynamoDbResult: DynamoDbResult = DynamoDbResult(ArrayList(), tableInfo)
+    var columnList: List<DynamoDbColumn> = dynamoDbResult.getDynamoDbColumnList()
 
     fun initialize() {
         try {
             setCurrentTableInfo()
-            doQueryDao(DYMMY_COND_VALUE)
+            doQueryDao(DUMMY_COND_VALUE)
             setTable(dynamoDbResult)
             loadType!!.selectedToggleProperty()
                 .addListener { observ: ObservableValue<out Toggle?>?, oldVal: Toggle?, newVal: Toggle? -> onLoadTypeChange(null) }
@@ -165,7 +167,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
                 rec[dbCol.columnName] = dbCol.columnType.initValue
             }
         } else {
-            for (dbCol in DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)) {
+            for (dbCol in columnList) {
                 rec[dbCol.columnName] = dbCol.columnType.initValue
             }
         }
@@ -203,7 +205,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     }
 
     fun hasSortKey(): Boolean {
-        return hasSortKey
+        return mainKeyInfo.sortKey != null
     }
 
     /*
@@ -508,11 +510,11 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     private fun doDelete(dataIndex: Int, rec: Map<String, AttributeValue>) {
         val sb = StringBuilder()
         sb.append("Table name = ").append(tableInfo!!.tableName()).append("\r\n")
-        sb.append("Partition key ").append(partitionKeyName).append(" = ") //
-                .append(rec!![partitionKeyName].toString()).append("\r\n")
-        if (hasSortKey) {
-            sb.append("Sort key ").append(sortKeyName) //
-                    .append(" = ").append(rec[sortKeyName].toString()).append("\r\n")
+        sb.append("Partition key ").append(mainKeyInfo.hashKey).append(" = ") //
+                .append(rec!![mainKeyInfo.hashKey].toString()).append("\r\n")
+        if (hasSortKey()) {
+            sb.append("Sort key ").append(mainKeyInfo.sortKey) //
+                    .append(" = ").append(rec[mainKeyInfo.sortKey].toString()).append("\r\n")
         }
         val confirmDialog = Alert(AlertType.CONFIRMATION)
         confirmDialog.headerText = "Delete Information"
@@ -555,13 +557,21 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
 
     private fun setCurrentTableInfoVariable() {
         val keyInfo = tableInfo.keySchema()
-        for (k in keyInfo) {
-            if (k.keyType() == KeyType.HASH) {
-                partitionKeyName = k.attributeName()
-            } else if (k.keyType() == KeyType.RANGE) {
-                sortKeyName = k.attributeName()
-                hasSortKey = true
-            }
+
+        mainKeyInfo = getIndexInfo(tableInfo.tableName(), keyInfo)
+
+        gsiInfoList = ArrayList()
+        for (gsiDesc in tableInfo.globalSecondaryIndexes()) {
+            val indexName = gsiDesc.indexName()
+            val gsiKeyInfo = gsiDesc.keySchema()
+            gsiInfoList += getIndexInfo(indexName, gsiKeyInfo)
+        }
+
+        lsiInfoList = ArrayList()
+        for (lsiDesc in tableInfo.localSecondaryIndexes()) {
+            val indexName = lsiDesc.indexName()
+            val gsiKeyInfo = lsiDesc.keySchema()
+            lsiInfoList += getIndexInfo(indexName, gsiKeyInfo)
         }
     }
 
@@ -569,7 +579,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     private fun doQueryDao(condValue: String) {
         val dao = QueryDao(connInfo)
         val conditionList: MutableList<DynamoDbCondition> = ArrayList()
-        val cond = DynamoDbCondition(partitionKeyName, DynamoDbConditionType.EQUAL, condValue)
+        val cond = DynamoDbCondition(mainKeyInfo.hashKey, DynamoDbConditionType.EQUAL, condValue)
         conditionList.add(cond)
         dynamoDbResult = dao.getResult(tableInfo, DynamoDbConditionJoinType.AND, conditionList)
     }
@@ -578,9 +588,9 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
         val defPartQL = String.format("select * from \"%1\$s\"", tableName)
         val sbPartiQL = StringBuilder(defPartQL)
         if (type != PartiQLBaseCondType.NONE) {
-            sbPartiQL.append(" where ").append(partitionKeyName).append(" = ?")
-            if (hasSortKey && type == PartiQLBaseCondType.PARTITION_AND_SORT) {
-                sbPartiQL.append(" and ").append(sortKeyName).append(" = ?")
+            sbPartiQL.append(" where ").append(mainKeyInfo.hashKey).append(" = ?")
+            if (hasSortKey() && type == PartiQLBaseCondType.PARTITION_AND_SORT && mainKeyInfo.sortKey != null) {
+                sbPartiQL.append(" and ").append(mainKeyInfo.sortKey).append(" = ?")
             }
         }
         txtAreaPartiql!!.text = sbPartiQL.toString()
@@ -589,10 +599,10 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
     private fun setTable(result: DynamoDbResult) {
         tableResultList!!.items.clear()
         tableResultList!!.columns.clear()
-        for (colIdx in 0 until result.columnCount - 1) {
+        for (colIdx in 0 until result.columnCount) {
             val columnName = result.getDynamoDbColumn(colIdx).columnName
             val dataCol = getTableColumn(columnName, colIdx)
-            dataCol.setCellFactory(TextFieldTableCell.forTableColumn())
+            dataCol.cellFactory = TextFieldTableCell.forTableColumn()
             dataCol.maxWidth = TBL_COL_MAX_WIDTH.toDouble()
             tableResultList!!.columns.add(dataCol)
         }
@@ -613,7 +623,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo,private val tableN
 
     companion object {
         private const val TBL_COL_MAX_WIDTH = 1000
-        private const val DYMMY_COND_VALUE = "\t\r\n"
+        private const val DUMMY_COND_VALUE = "\t\r\n"
     }
 
     init {

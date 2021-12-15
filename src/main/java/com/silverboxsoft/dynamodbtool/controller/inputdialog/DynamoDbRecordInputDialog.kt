@@ -59,9 +59,8 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
         if (keyColumnSet.contains(attrName)) {
             val valNode = retList[valueColIndex]
             if (valNode is TextField && editMode == DynamoDbEditMode.UPD) {
-                val textField = valNode
-                textField.style = "-fx-background-color: lightgray;"
-                textField.isEditable = false
+                valNode.style = "-fx-background-color: lightgray;"
+                valNode.isEditable = false
             }
             val delbox = retList[delColIndex] as CheckBox
             delbox.isDisable = true
@@ -103,9 +102,9 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
 
     init {
         this.title = DynamoDbUtils.Companion.getKeyValueStr(tableInfo, dynamoDbRecord)
-        tblStructColumnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
-        val keyInfos = tableInfo.keySchema()
-        keyInfos.stream().forEach { elem: KeySchemaElement -> keyColumnSet.add(elem.attributeName()) }
+        // tblStructColumnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
+        val keyInfoList = tableInfo.keySchema()
+        keyInfoList.stream().forEach { elem: KeySchemaElement -> keyColumnSet.add(elem.attributeName()) }
         // initialize() // TODO work around
     }
 }
