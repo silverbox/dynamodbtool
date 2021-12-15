@@ -137,12 +137,28 @@ class DynamoDbToolController : Initializable {
         val desc = activeTable.tableInfo
         val sb = StringBuilder()
         sb.append("Table name = ").append(desc!!.tableName()).append("\r\n")
-        sb.append("Partition key name = ").append(activeTable.partitionKeyName).append("\r\n")
-        if (activeTable.hasSortKey()) {
-            sb.append("Sort key name = ").append(activeTable.sortKeyName).append("\r\n")
-        }
         sb.append("Record count = ").append(desc.itemCount()).append("\r\n")
         sb.append("Byte size = ").append(desc.tableSizeBytes()).append("\r\n")
+        sb.append("---- Partition key ----").append("\r\n")
+        sb.append("Hash key name = ").append(activeTable.mainKeyInfo.hashKey).append("\r\n")
+        if (activeTable.hasSortKey()) {
+            sb.append("Sort key name = ").append(activeTable.mainKeyInfo.sortKey).append("\r\n")
+        }
+        for (gsi in activeTable.gsiInfoList){
+            sb.append("---- GSI [").append(gsi.indexName).append("] key info ----").append("\r\n")
+            sb.append("Hash key name = ").append(gsi.hashKey).append("\r\n")
+            if (gsi.sortKey != null) {
+                sb.append("Sort key name = ").append(gsi.sortKey).append("\r\n")
+            }
+        }
+        for (lsi in activeTable.lsiInfoList){
+            sb.append("---- LSI [").append(lsi.indexName).append("] key info ----").append("\r\n")
+            sb.append("Hash key name = ").append(lsi.hashKey).append("\r\n")
+            if (lsi.sortKey != null) {
+                sb.append("Sort key name = ").append(lsi.sortKey).append("\r\n")
+            }
+        }
+
         val tableInfoDialog = Alert(AlertType.NONE)
         tableInfoDialog.headerText = "Table Information"
         tableInfoDialog.dialogPane.buttonTypes.add(ButtonType.OK)
@@ -187,15 +203,21 @@ class DynamoDbToolController : Initializable {
 	 */
     @Throws(URISyntaxException::class)
     fun actTableDecided() {
-        val tableName = lvTableList!!.selectionModel.selectedItem
-        val dbtable = DynamoDbTable(connectInfo, tableName, dialog)
-        dbtable.initialize()
-        val newTab = Tab()
-        newTab.text = tableName
-        newTab.content = dbtable
-        tabPaneTable!!.tabs.add(newTab)
-        val selectionModel = tabPaneTable!!.selectionModel
-        selectionModel.select(newTab)
+        try {
+            val tableName = lvTableList!!.selectionModel.selectedItem
+            val dbTable = DynamoDbTable(connectInfo, tableName, dialog)
+            dbTable.initialize()
+            val newTab = Tab()
+            newTab.text = tableName
+            newTab.content = dbTable
+            tabPaneTable!!.tabs.add(newTab)
+            val selectionModel = tabPaneTable!!.selectionModel
+            selectionModel.select(newTab)
+        } catch (e: Exception) {
+            val alert = Alert(AlertType.ERROR, e.message)
+            alert.show()
+            e.printStackTrace()
+        }
     }
 
     /*
@@ -224,6 +246,7 @@ class DynamoDbToolController : Initializable {
             }
             return DynamoDbConnectInfo(connectType, txtFldLocalEndpoint!!.text)
         }
+
     private val activeDynamoDbTable: DynamoDbTable?
         get() {
             val activeIndex = tabPaneTable!!.selectionModel.selectedIndex
