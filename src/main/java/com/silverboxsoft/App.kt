@@ -7,9 +7,8 @@ import java.io.IOException
 import javafx.fxml.FXMLLoader
 import javafx.scene.layout.VBox
 import javafx.scene.Scene
-import kotlin.jvm.JvmStatic
 import javafx.application.Application
-import javafx.scene.control.*
+import javafx.scene.image.Image
 
 class App : Application() {
     @Throws(Exception::class)
@@ -24,8 +23,10 @@ class App : Application() {
                 javaClass.getResource("dynamodbtool/controller/javafx/DynamoDbToolController.fxml"))
         val newPane = fxmlLoader.load<Any>() as VBox
         val scene = Scene(newPane)
+        val icon = Image(javaClass.getResourceAsStream("dynamodbtool/controller/javafx/database.png"))
         stage.title = "DynamoDB Tool"
         stage.scene = scene
+        stage.icons.add(icon)
     }
 }
 
