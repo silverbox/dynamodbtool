@@ -13,7 +13,7 @@ import java.util.ArrayList
 
 class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle: String)
     : AbsDynamoDbDocumentInputDialog<List<AttributeValue>>(dynamoDbRecord, dialogTitle) {
-    private var addAttrValueNode: Node = getAtrributeBox(ADD_INDEX, selectedAddType.initValue)
+    private var addAttrValueNode: Node = getAttributeBox(ADD_INDEX, selectedAddType.initValue)
     private val updAttributeMap: MutableMap<String, AttributeValue> = HashMap()
     private var addAttributeMap: MutableMap<String, AttributeValue> = HashMap()
     private var tempAddAttrValue: AttributeValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
@@ -48,16 +48,6 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
             }
             return retList
         }
-    override val footerNodeList: List<Node>
-        get() {
-            val retList: MutableList<Node> = ArrayList()
-            addAttrValueNode = getAtrributeBox(ADD_INDEX, selectedAddType.initValue)
-            retList.add(Label("new Index"))
-            retList.add(typeComboBox)
-            retList.add(addAttrValueNode)
-            retList.add(addButton)
-            return retList
-        }
     override val valueColIndex: Int
         get() = 2
     override val editedDynamoDbRecord: List<AttributeValue>
@@ -77,6 +67,16 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
         }
     override val emptyAttr: List<AttributeValue>
         get() = ArrayList<AttributeValue>()
+
+    override fun getFooterNodeList(): List<Node> {
+        val retList: MutableList<Node> = ArrayList()
+        addAttrValueNode = getAttributeBox(ADD_INDEX, selectedAddType.initValue)
+        retList.add(Label("new Index"))
+        retList.add(typeComboBox)
+        retList.add(addAttrValueNode)
+        retList.add(addButton)
+        return retList
+    }
 
     override fun actAddNewAttribute() {
         val recIdx = newRecIdx
@@ -160,7 +160,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
     private fun getOneBodyAttributeNodeList(recIdx: Int, attrVal: AttributeValue): List<Node> {
         val indexLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(recIdx.toString())
         val typeLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(DynamoDbUtils.Companion.getAttrTypeString(attrVal))
-        val valueBox = getAtrributeBox(recIdx, attrVal)
+        val valueBox = getAttributeBox(recIdx, attrVal)
         val delCheck = CheckBox()
         delCheck.id = AbsDynamoDbInputDialog.Companion.DEL_ID_PREFIX + recIdx.toString()
         val nodeList: MutableList<Node> = ArrayList()
@@ -171,7 +171,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
         return nodeList
     }
 
-    private fun getAtrributeBox(recIndex: Int, attrVal: AttributeValue): Node {
+    private fun getAttributeBox(recIndex: Int, attrVal: AttributeValue): Node {
         val attrStr: String = DynamoDbUtils.Companion.getAttrString(attrVal)
         val textField = TextField(attrStr)
         if (attrVal!!.s() != null) {
@@ -193,8 +193,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
     private fun getAttrEditButton(recIndex: Int, text: String): Node {
         val idStr = recIndex.toString()
         val hbox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
-        val vallabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(text)
-        vallabel.id = AbsDynamoDbInputDialog.Companion.VALLBL_ID_PREFIX + idStr
+        val valLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(text)
+        valLabel.id = AbsDynamoDbInputDialog.Companion.VALLBL_ID_PREFIX + idStr
         val button = Button()
         button.text = AbsDynamoDbInputDialog.Companion.BTN_TITLE
         button.id = AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX + idStr
@@ -202,7 +202,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
             val wkBtn = event.source as Button
             actOpenEditDialog(wkBtn.id)
         }
-        hbox.children.addAll(button, vallabel)
+        hbox.children.addAll(button, valLabel)
         return hbox
     }
 

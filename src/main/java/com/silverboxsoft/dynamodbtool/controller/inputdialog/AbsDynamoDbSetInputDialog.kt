@@ -41,13 +41,6 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
             }
             return retList
         }
-    override val footerNodeList: List<Node>
-        get() {
-            val retList: MutableList<Node> = ArrayList()
-            retList.add(addValueNode)
-            retList.add(addButton)
-            return retList
-        }
     override val valueColIndex: Int
         get() = 0
     override val editedDynamoDbRecord: List<T>
@@ -66,6 +59,13 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         }
     override val emptyAttr: List<T>
         get() = ArrayList<T>()
+
+    override fun getFooterNodeList(): List<Node> {
+        val retList: MutableList<Node> = ArrayList()
+        retList.add(addValueNode)
+        retList.add(addButton)
+        return retList
+    }
 
     override fun actAddNewAttribute() {
         val recIdx = newRecIdx
