@@ -102,13 +102,17 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
         } else if (valueNode is TextField) {
             val valTextField = valueNode
             val id = valTextField.id
-            if (id.startsWith(AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX)) {
-                return AttributeValue.builder().s(valTextField.text).build()
-            } else if (id.startsWith(AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX)) {
-                return AttributeValue.builder().n(valTextField.text).build()
-            } else if (id.startsWith(AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX)) {
-                val sdkBytes: SdkBytes = DynamoDbUtils.Companion.getSdkBytesFromBase64String(valTextField.text)
-                return AttributeValue.builder().b(sdkBytes).build()
+            when {
+                id.startsWith(AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX) -> {
+                    return AttributeValue.builder().s(valTextField.text).build()
+                }
+                id.startsWith(AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX) -> {
+                    return AttributeValue.builder().n(valTextField.text).build()
+                }
+                id.startsWith(AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX) -> {
+                    val sdkBytes: SdkBytes = DynamoDbUtils.Companion.getSdkBytesFromBase64String(valTextField.text)
+                    return AttributeValue.builder().b(sdkBytes).build()
+                }
             }
         } else if (valueNode is Label) {
             return AttributeValue.builder().nul(true).build()
@@ -120,12 +124,16 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
         if (valueNode is TextField) {
             val valTextField = valueNode
             val id = valTextField.id
-            if (id.startsWith(AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX)) {
-                return true
-            } else if (id.startsWith(AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX)) {
-                return DynamoDbUtils.Companion.isNumericStr(valTextField.text)
-            } else if (id.startsWith(AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX)) {
-                return DynamoDbUtils.Companion.isBase64Str(valTextField.text)
+            when {
+                id.startsWith(AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX) -> {
+                    return true
+                }
+                id.startsWith(AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX) -> {
+                    return DynamoDbUtils.Companion.isNumericStr(valTextField.text)
+                }
+                id.startsWith(AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX) -> {
+                    return DynamoDbUtils.Companion.isBase64Str(valTextField.text)
+                }
             }
         }
         return true

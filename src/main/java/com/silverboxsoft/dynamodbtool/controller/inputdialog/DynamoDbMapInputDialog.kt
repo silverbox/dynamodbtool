@@ -31,15 +31,15 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
         }
     override val headerLabelList: List<Node>
         get() {
-            val typeTitilelabel = getContentLabel("TYPE", true)
-            val keyTitilelabel = getContentLabel("NAME", true)
-            val valTtilelabel = getContentLabel("VALUE", true)
-            val delTtilelabel = getContentLabel("DEL", true)
+            val typeTitleLabel = getContentLabel("TYPE", true)
+            val keyTitleLabel = getContentLabel("NAME", true)
+            val valTitleLabel = getContentLabel("VALUE", true)
+            val delTitleLabel = getContentLabel("DEL", true)
             val retList: MutableList<Node> = ArrayList()
-            retList.add(typeTitilelabel)
-            retList.add(keyTitilelabel)
-            retList.add(valTtilelabel)
-            retList.add(delTtilelabel)
+            retList.add(typeTitleLabel)
+            retList.add(keyTitleLabel)
+            retList.add(valTitleLabel)
+            retList.add(delTitleLabel)
             return retList
         }
     override val bodyAttributeNodeList: List<List<Node>>
