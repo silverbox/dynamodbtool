@@ -45,7 +45,6 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
     abstract val headerWidthList: List<Int>
     abstract val headerLabelList: List<Node>
     abstract val bodyAttributeNodeList: List<List<Node>>
-    abstract val footerNodeList: List<Node>
 
     /*
 	 * for screen resize
@@ -61,6 +60,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
     /*
 	 * for add attribute action
 	 */
+    abstract fun getFooterNodeList(): List<Node>
     abstract fun actAddNewAttribute()
 
     /*
@@ -200,7 +200,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
 
     protected fun updateFooter() {
         footGridPane.children.clear()
-        val footerNode = footerNodeList
+        val footerNode = getFooterNodeList()
         for (cIdx in footerNode.indices) {
             footGridPane.add(footerNode[cIdx], cIdx, 0)
         }
