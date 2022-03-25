@@ -36,8 +36,8 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
     protected var buttonData: ButtonData = ButtonData.OTHER
     private var isValidData = false
     protected val dynamoDbRecordOrg: R
-    var orgBodyAttribueNodeList: List<List<Node>> = ArrayList()
-    var addBodyAttribueNodeList: MutableList<List<Node>> = ArrayList()
+    var orgBodyAttributeNodeList: List<List<Node>> = ArrayList()
+    var addBodyAttributeNodeList: MutableList<List<Node>> = ArrayList()
 
     /*
 	 * for setup
@@ -74,8 +74,8 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
     protected val currentBodyNodeList: List<List<Node>>
         get() {
             val curNodeList: MutableList<List<Node>> = ArrayList()
-            curNodeList.addAll(orgBodyAttribueNodeList)
-            curNodeList.addAll(addBodyAttribueNodeList)
+            curNodeList.addAll(orgBodyAttributeNodeList)
+            curNodeList.addAll(addBodyAttributeNodeList)
             return curNodeList
         }
 
@@ -134,18 +134,18 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         dialogPane.content = borderPane
     }
 
-    fun innerInitialize() {
+    private fun innerInitialize() {
         headGridPane.children.clear()
         val labelList = headerLabelList
         for (cIdx in labelList.indices) {
             headGridPane.add(labelList[cIdx], cIdx, 0)
         }
         gridPane.children.clear()
-        orgBodyAttribueNodeList = bodyAttributeNodeList
-        for (rIdx in orgBodyAttribueNodeList.indices) {
-            val nodelList = orgBodyAttribueNodeList[rIdx]
-            for (cIdx in nodelList.indices) {
-                gridPane.add(nodelList[cIdx], cIdx, rIdx)
+        orgBodyAttributeNodeList = bodyAttributeNodeList
+        for (rIdx in orgBodyAttributeNodeList.indices) {
+            val nodeList = orgBodyAttributeNodeList[rIdx]
+            for (cIdx in nodeList.indices) {
+                gridPane.add(nodeList[cIdx], cIdx, rIdx)
             }
             val wkRowConstraint = RowConstraints()
             wkRowConstraint.minHeight = GRID_MIN_HEIGHT.toDouble()
@@ -191,11 +191,11 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
     }
 
     protected fun addAttributeNodeList(newNodeList: List<Node>) {
-        val newIdx = orgBodyAttribueNodeList.size + addBodyAttribueNodeList.size
+        val newIdx = orgBodyAttributeNodeList.size + addBodyAttributeNodeList.size
         for (cIdx in newNodeList.indices) {
             gridPane.add(newNodeList[cIdx], cIdx, newIdx)
         }
-        addBodyAttribueNodeList.add(newNodeList)
+        addBodyAttributeNodeList.add(newNodeList)
     }
 
     protected fun updateFooter() {

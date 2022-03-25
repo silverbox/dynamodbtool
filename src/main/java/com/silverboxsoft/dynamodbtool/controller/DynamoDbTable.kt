@@ -212,29 +212,29 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
 	 * event handler
 	 */
     @FXML
-    protected fun actAddPartitionKeyCond(ev: ActionEvent?) {
+    private fun actAddPartitionKeyCond(ev: ActionEvent?) {
         setDefaultPartiQL(PartiQLBaseCondType.PARTITION)
     }
 
     @FXML
-    protected fun actAddAllKeyCond(ev: ActionEvent?) {
+    private fun actAddAllKeyCond(ev: ActionEvent?) {
         setDefaultPartiQL(PartiQLBaseCondType.PARTITION_AND_SORT)
     }
 
     @FXML
-    protected fun actTableLineCopyToClipBoard(ev: ActionEvent?) {
+    private fun actTableLineCopyToClipBoard(ev: ActionEvent?) {
         copyToClipBoardSub(CopyModeType.TAB)
     }
 
     @FXML
-    protected fun onTableResultListKeyPressed(ev: KeyEvent) {
+    private fun onTableResultListKeyPressed(ev: KeyEvent) {
         if (ev.isControlDown && ev.eventType == KeyEvent.KEY_PRESSED && ev.code == KeyCode.C) {
             actTableLineCopyToClipBoard(null)
         }
     }
 
     @FXML
-    protected fun actTableLineCopyToClipBoardWhereCondition(ev: ActionEvent?) {
+    private fun actTableLineCopyToClipBoardWhereCondition(ev: ActionEvent?) {
         if (tableResultList!!.selectionModel.isCellSelectionEnabled) {
             copyToClipBoardSub(CopyModeType.WHERE)
         } else {
@@ -244,12 +244,12 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     }
 
     @FXML
-    protected fun actTableLineCopyToClipBoardJson(ev: ActionEvent?) {
+    private fun actTableLineCopyToClipBoardJson(ev: ActionEvent?) {
         copyToClipBoardSub(CopyModeType.JSON)
     }
 
     @FXML
-    protected fun onMouseClicked(ev: MouseEvent) {
+    private fun onMouseClicked(ev: MouseEvent) {
         try {
             if (ev.clickCount >= 2) {
                 actUpdate(null)
@@ -262,7 +262,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     }
 
     @FXML
-    protected fun actToggleCellSelectMode(ev: ActionEvent?) {
+    private fun actToggleCellSelectMode(ev: ActionEvent?) {
         isCellSelectMode = !isCellSelectMode
         if (isCellSelectMode) {
             menuItemTableResultListCellSelectMode!!.text = "Switch to row select mode"
@@ -273,7 +273,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     }
 
     @FXML
-    protected fun onLoadTypeChange(ev: Event?) {
+    private fun onLoadTypeChange(ev: Event?) {
         txtAreaPartiql!!.isDisable = !radioLoadPartiQL!!.isSelected
         txtFldCondValue!!.isDisable = radioLoadPartiQL!!.isSelected
     }
@@ -482,6 +482,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     @Throws(URISyntaxException::class)
     private fun doAdd(rec: Map<String, AttributeValue>) {
         val dialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.ADD)
+        dialog.initialize()
         val newRecWk = dialog.showAndWait()
         if (newRecWk.isPresent) {
             val newRec = newRecWk.get()
