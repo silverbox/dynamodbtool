@@ -63,9 +63,9 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
                     continue
                 }
                 val valueNode = wkNodeList[valueColIndex]
-                val keylabel = wkNodeList[COL_IDX_NAME] as Label
+                val keyLabel = wkNodeList[COL_IDX_NAME] as Label
                 val newAttr = getAttributeFromNode(valueNode)
-                retMap[keylabel.text] = newAttr
+                retMap[keyLabel.text] = newAttr
             }
             return retMap
         }
