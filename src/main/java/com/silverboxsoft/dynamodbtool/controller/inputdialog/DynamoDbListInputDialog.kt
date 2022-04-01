@@ -174,20 +174,29 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
     private fun getAttributeBox(recIndex: Int, attrVal: AttributeValue): Node {
         val attrStr: String = DynamoDbUtils.Companion.getAttrString(attrVal)
         val textField = TextField(attrStr)
-        if (attrVal!!.s() != null) {
-            textField.id = AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX + recIndex.toString()
-        } else if (attrVal.n() != null) {
-            textField.id = AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX + recIndex.toString()
-        } else if (attrVal.b() != null) {
-            textField.id = AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX + recIndex.toString()
-        } else if (attrVal.bool() != null) {
-            AbsDynamoDbInputDialog.Companion.getBooleanInput(attrVal)
-        } else if (DynamoDbUtils.Companion.isNullAttr(attrVal)) {
-            AbsDynamoDbInputDialog.Companion.nullViewLabel
-        } else {
-            getAttrEditButton(recIndex, attrStr)
+        when {
+            attrVal!!.s() != null -> {
+                textField.id = AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX + recIndex.toString()
+                return textField
+            }
+            attrVal.n() != null -> {
+                textField.id = AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX + recIndex.toString()
+                return textField
+            }
+            attrVal.b() != null -> {
+                textField.id = AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX + recIndex.toString()
+                return textField
+            }
+            attrVal.bool() != null -> {
+                return AbsDynamoDbInputDialog.Companion.getBooleanInput(attrVal)
+            }
+            DynamoDbUtils.Companion.isNullAttr(attrVal) -> {
+                return AbsDynamoDbInputDialog.Companion.nullViewLabel
+            }
+            else -> {
+                return getAttrEditButton(recIndex, attrStr)
+            }
         }
-        return textField
     }
 
     private fun getAttrEditButton(recIndex: Int, text: String): Node {
