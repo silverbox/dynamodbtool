@@ -99,6 +99,11 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     var lsiInfoList: List<DynamoDbIndex> = ArrayList()
     var dynamoDbResult: DynamoDbResult = DynamoDbResult(ArrayList(), tableInfo)
     var columnList: List<DynamoDbColumn> = dynamoDbResult.getDynamoDbColumnList()
+    var searchCondition = SearchCondition("",
+        onlySelectedColumn = false,
+        caseSensitive = false,
+        searchAsRegEx = false
+    )
 
     fun initialize() {
         try {
@@ -227,13 +232,6 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     }
 
     @FXML
-    private fun onTableResultListKeyPressed(ev: KeyEvent) {
-        if (ev.isControlDown && ev.eventType == KeyEvent.KEY_PRESSED && ev.code == KeyCode.C) {
-            actTableLineCopyToClipBoard(null)
-        }
-    }
-
-    @FXML
     private fun actTableLineCopyToClipBoardWhereCondition(ev: ActionEvent?) {
         if (tableResultList!!.selectionModel.isCellSelectionEnabled) {
             copyToClipBoardSub(CopyModeType.WHERE)
@@ -246,6 +244,18 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     @FXML
     private fun actTableLineCopyToClipBoardJson(ev: ActionEvent?) {
         copyToClipBoardSub(CopyModeType.JSON)
+    }
+
+    @FXML
+    private fun actTableLineSearch(ev: ActionEvent?) {
+        searchWord()
+    }
+
+    @FXML
+    private fun onTableResultListKeyPressed(ev: KeyEvent) {
+        if (ev.isControlDown && ev.eventType == KeyEvent.KEY_PRESSED && ev.code == KeyCode.C) {
+            actTableLineCopyToClipBoard(null)
+        }
     }
 
     @FXML
@@ -330,6 +340,56 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
             content.putString(targetStr)
             Clipboard.getSystemClipboard().setContent(content)
         }
+    }
+
+    private fun searchWord() {
+        val dialog = SearchConditionDialog(searchCondition, "Table cell condition")
+        val newConditionWk = dialog.showAndWait()
+        if (newConditionWk.isPresent) {
+            val newCondition = newConditionWk.get()
+            val targetColIdxSet: Set<Int> = getSearchTargetColIdxList(newCondition.onlySelectedColumn)
+            val caredSearchWord = if (newCondition.caseSensitive) newCondition.searchWord else newCondition.searchWord.toLowerCase()
+            val regex = Regex(caredSearchWord)
+            val matchPosList: MutableList<Pair<Int, Int>> = ArrayList()
+
+            for (visibleColIdx in targetColIdxSet) {
+                for (rIdx in (0 until dynamoDbResult.recordCount - 1)) {
+                    val colName = tableResultList!!.columns[visibleColIdx].id
+                    val dbColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
+                    val wkCellStr = tableResultList!!.items[rIdx].getData()[dbColIdx]
+                    val chkStr = if (newCondition.caseSensitive) wkCellStr else wkCellStr.toLowerCase()
+                    val isMatch =
+                        if (newCondition.searchAsRegEx) regex.containsMatchIn(chkStr)
+                        else wkCellStr.contains(newCondition.searchWord, !newCondition.caseSensitive)
+                    if (isMatch) {
+                        tableResultList!!.selectionModel.select(rIdx, tableResultList!!.columns[visibleColIdx])
+                        matchPosList.add(Pair(visibleColIdx, rIdx))
+                    }
+                }
+            }
+            searchCondition = newCondition
+        }
+    }
+
+    /**
+     * return visible column index(not db column index)
+     */
+    private fun getSearchTargetColIdxList(onlySelectedCol: Boolean): Set<Int> {
+        val targetColIdxSet: MutableSet<Int> = HashSet()
+        val selectedModel = tableResultList!!.selectionModel
+        if (onlySelectedCol && selectedModel.selectedItems.size > 0) {
+            val posList = getPositionList(selectedModel)
+            for (position in posList) {
+                val wkCol = position.key
+//                val colName = tableResultList!!.columns[wkCol].id
+//                val wkColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
+                targetColIdxSet.add(wkCol)
+            }
+        } else {
+            val allColIdxList = (0 until tableResultList!!.columns.size - 1)
+            targetColIdxSet.addAll(allColIdxList)
+        }
+        return targetColIdxSet
     }
 
     private fun getWholeTableSelectedCellString(selectedModel: TableViewSelectionModel<DynamoDbViewRecord>,
