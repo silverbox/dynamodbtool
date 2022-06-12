@@ -48,6 +48,8 @@
                               </Menu>
                               <SeparatorMenuItem mnemonicParsing="false" />
                               <MenuItem fx:id="menuItemTableResultListCellSelectMode" mnemonicParsing="false" onAction="#actToggleCellSelectMode" text="Switch to row select mode" />
+                              <SeparatorMenuItem mnemonicParsing="false" />
+                              <MenuItem fx:id="menuItemTableResultListSearch" mnemonicParsing="false" onAction="#actTableLineSearch" text="Search" />
                            </items>
                         </ContextMenu>
                      </contextMenu>

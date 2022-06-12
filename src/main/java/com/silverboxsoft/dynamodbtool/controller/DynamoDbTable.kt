@@ -227,13 +227,6 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     }
 
     @FXML
-    private fun onTableResultListKeyPressed(ev: KeyEvent) {
-        if (ev.isControlDown && ev.eventType == KeyEvent.KEY_PRESSED && ev.code == KeyCode.C) {
-            actTableLineCopyToClipBoard(null)
-        }
-    }
-
-    @FXML
     private fun actTableLineCopyToClipBoardWhereCondition(ev: ActionEvent?) {
         if (tableResultList!!.selectionModel.isCellSelectionEnabled) {
             copyToClipBoardSub(CopyModeType.WHERE)
@@ -246,6 +239,18 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     @FXML
     private fun actTableLineCopyToClipBoardJson(ev: ActionEvent?) {
         copyToClipBoardSub(CopyModeType.JSON)
+    }
+
+    @FXML
+    private fun actTableLineSearch(ev: ActionEvent?) {
+        searchWord()
+    }
+
+    @FXML
+    private fun onTableResultListKeyPressed(ev: KeyEvent) {
+        if (ev.isControlDown && ev.eventType == KeyEvent.KEY_PRESSED && ev.code == KeyCode.C) {
+            actTableLineCopyToClipBoard(null)
+        }
     }
 
     @FXML
@@ -329,6 +334,21 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
         if (targetStr != null) {
             content.putString(targetStr)
             Clipboard.getSystemClipboard().setContent(content)
+        }
+    }
+
+    private fun searchWord() {
+        val condition = SearchCondition("test cond",
+            onlySelectedColumn = true,
+            caseSensitive = false,
+            searchAsRegEx = true
+        )
+        val dialog = SearchConditionDialog(condition, "Table cell condition")
+        val newConditionWk = dialog.showAndWait()
+        if (newConditionWk.isPresent) {
+            println(newConditionWk.get())
+        } else {
+            println("cancelled")
         }
     }
 
