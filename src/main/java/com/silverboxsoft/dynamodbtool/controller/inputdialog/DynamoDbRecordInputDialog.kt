@@ -6,7 +6,7 @@ import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumn
 import javafx.scene.control.ButtonBar.ButtonData
 import javafx.scene.control.Alert.AlertType
 import java.util.HashSet
-import com.silverboxsoft.dynamodbtool.controller.DynamoDbEditMode
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbEditMode
 import javafx.scene.Node
 import javafx.scene.control.*
 import software.amazon.awssdk.services.dynamodb.model.*
@@ -14,7 +14,8 @@ import software.amazon.awssdk.utils.StringUtils
 import java.util.ArrayList
 
 class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map<String, AttributeValue>,
-                                private val editMode: DynamoDbEditMode) : DynamoDbMapInputDialog(dynamoDbRecord, "") {
+                                private val editMode: DynamoDbEditMode
+) : DynamoDbMapInputDialog(dynamoDbRecord, "") {
     private var tblStructColumnList: List<DynamoDbColumn> = ArrayList()
     private var keyColumnSet: MutableSet<String> = HashSet()
     // add key info first
