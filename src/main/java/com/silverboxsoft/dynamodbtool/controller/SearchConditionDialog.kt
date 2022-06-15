@@ -45,8 +45,8 @@ class SearchConditionDialog(condition: SearchCondition, dialogTitle: String) : D
             null
         }
 
-        setupComponent()
         setupScreen()
+        setupComponent()
     }
 
     private fun setupScreen() {
@@ -79,6 +79,8 @@ class SearchConditionDialog(condition: SearchCondition, dialogTitle: String) : D
 
         dialogPane.content = gridPane
         dialogPane.buttonTypes.addAll(ButtonType.OK, ButtonType.CANCEL)
+
+        textFieldSearchText.requestFocus()
     }
 
     private fun doFinalConfirmation(dialogEvent: DialogEvent) {

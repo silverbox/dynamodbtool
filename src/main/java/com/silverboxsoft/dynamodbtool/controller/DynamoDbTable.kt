@@ -9,7 +9,6 @@ import javafx.scene.layout.AnchorPane
 import javafx.beans.value.ObservableValue
 import java.net.URISyntaxException
 import java.util.HashMap
-import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils
 import javafx.scene.control.Alert.AlertType
 import java.util.HashSet
 import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog
@@ -35,6 +34,7 @@ import javafx.event.Event
 import javafx.event.EventHandler
 import javafx.scene.control.*
 import javafx.scene.input.*
+import javafx.stage.Modality
 import javafx.util.Pair
 import software.amazon.awssdk.services.dynamodb.model.*
 import software.amazon.awssdk.utils.StringUtils
@@ -104,6 +104,7 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
         caseSensitive = false,
         searchAsRegEx = false
     )
+    var matchPosList: MutableList<Pair<Int, Int>> = ArrayList()
 
     fun initialize() {
         try {
@@ -118,6 +119,10 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
             alert.show()
             e.printStackTrace()
         }
+    }
+
+    fun getTableView(): TableView<DynamoDbViewRecord> {
+        return tableResultList!!
     }
 
     /*
@@ -345,30 +350,55 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
     private fun searchWord() {
         val dialog = SearchConditionDialog(searchCondition, "Table cell condition")
         val newConditionWk = dialog.showAndWait()
-        if (newConditionWk.isPresent) {
-            val newCondition = newConditionWk.get()
-            val targetColIdxSet: Set<Int> = getSearchTargetColIdxList(newCondition.onlySelectedColumn)
-            val caredSearchWord = if (newCondition.caseSensitive) newCondition.searchWord else newCondition.searchWord.toLowerCase()
-            val regex = Regex(caredSearchWord)
-            val matchPosList: MutableList<Pair<Int, Int>> = ArrayList()
+        if (!newConditionWk.isPresent) {
+            return
+        }
+        val newCondition = newConditionWk.get()
+        val targetColIdxSet: Set<Int> = getSearchTargetColIdxList(newCondition.onlySelectedColumn)
+        val caredSearchWord = if (newCondition.caseSensitive) newCondition.searchWord else newCondition.searchWord.toLowerCase()
+        val regex = Regex(caredSearchWord)
 
-            for (visibleColIdx in targetColIdxSet) {
-                for (rIdx in (0 until dynamoDbResult.recordCount - 1)) {
-                    val colName = tableResultList!!.columns[visibleColIdx].id
-                    val dbColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
-                    val wkCellStr = tableResultList!!.items[rIdx].getData()[dbColIdx]
-                    val chkStr = if (newCondition.caseSensitive) wkCellStr else wkCellStr.toLowerCase()
-                    val isMatch =
-                        if (newCondition.searchAsRegEx) regex.containsMatchIn(chkStr)
-                        else wkCellStr.contains(newCondition.searchWord, !newCondition.caseSensitive)
-                    if (isMatch) {
-                        tableResultList!!.selectionModel.select(rIdx, tableResultList!!.columns[visibleColIdx])
-                        matchPosList.add(Pair(visibleColIdx, rIdx))
-                    }
+        tableResultList!!.selectionModel.clearSelection()
+        matchPosList.clear()
+        for (visibleColIdx in targetColIdxSet) {
+            for (rIdx in (0 until dynamoDbResult.recordCount - 1)) {
+                val colName = tableResultList!!.columns[visibleColIdx].id
+                val dbColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
+                val wkCellStr = tableResultList!!.items[rIdx].getData()[dbColIdx]
+                val chkStr = if (newCondition.caseSensitive) wkCellStr else wkCellStr.toLowerCase()
+                val isMatch =
+                    if (newCondition.searchAsRegEx) regex.containsMatchIn(chkStr)
+                    else wkCellStr.contains(newCondition.searchWord, !newCondition.caseSensitive)
+                if (isMatch) {
+                    tableResultList!!.selectionModel.select(rIdx, tableResultList!!.columns[visibleColIdx])
+                    matchPosList.add(Pair(visibleColIdx, rIdx))
                 }
             }
-            searchCondition = newCondition
         }
+        searchCondition = newCondition
+        if (matchPosList.size > 0) {
+            showSearchResultDialog()
+        }
+    }
+
+    private fun showSearchResultDialog() {
+        val srDialog = SearchResultJumpDialog(this)
+        srDialog.initModality(Modality.NONE)
+        srDialog.posList = matchPosList
+        srDialog.show()
+    }
+
+    fun jumpToSearchResultCell(index: Int) {
+        val pos: Pair<Int, Int> = matchPosList[index]
+        val fPos = TablePosition(tableResultList, pos.value, tableResultList!!.columns[pos.key])
+        tableResultList!!.focusModel.focus(fPos)
+        tableResultList!!.scrollTo(pos.value)
+        tableResultList!!.scrollToColumnIndex(pos.key)
+    }
+
+    fun getSearchResultCellStr(index: Int): String {
+        val pos: Pair<Int, Int> = matchPosList[index]
+        return tableResultList!!.items[pos.value].getData()[pos.key]
     }
 
     /**
