@@ -25,11 +25,11 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         }
     override val headerLabelList: List<Node>
         get() {
-            val valTtilelabel = getContentLabel("VALUE", true)
-            val delTtilelabel = getContentLabel("DEL", true)
+            val valTitleLabel = getContentLabel("VALUE", true)
+            val delTitleLabel = getContentLabel("DEL", true)
             val retList: MutableList<Node> = ArrayList()
-            retList.add(valTtilelabel)
-            retList.add(delTtilelabel)
+            retList.add(valTitleLabel)
+            retList.add(delTitleLabel)
             return retList
         }
     override val bodyAttributeNodeList: List<List<Node>>
@@ -53,7 +53,7 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
                     continue
                 }
                 val valueNode = wkNodeList[0]
-                retList.add(getCurrentAttrubuteValue(valueNode))
+                retList.add(getCurrentAttributeValue(valueNode))
             }
             return retList
         }
@@ -61,6 +61,7 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         get() = ArrayList<T>()
 
     override fun getFooterNodeList(): List<Node> {
+        addValueNode = getAttributeBox(newRecIdx, initialAttribute)
         val retList: MutableList<Node> = ArrayList()
         retList.add(addValueNode)
         retList.add(addButton)
@@ -70,13 +71,13 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
     override fun actAddNewAttribute() {
         val recIdx = newRecIdx
         val newIdStr = recIdx.toString()
-        val attrVal = getCurrentAttrubuteValue(addValueNode)
+        val attrVal = getCurrentAttributeValue(addValueNode)
         if (!validationCheck(attrVal)) {
             return
         }
         addAttributeMap[newIdStr] = attrVal
-        val nodelList = getOneBodyAttributeNodeList(recIdx, attrVal)
-        addAttributeNodeList(nodelList)
+        val nodeList = getOneBodyAttributeNodeList(recIdx, attrVal)
+        addAttributeNodeList(nodeList)
     }
 
     override val isFinalValidationOk: Boolean
@@ -89,7 +90,7 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
                     continue
                 }
                 val valueNode = wkNodeList[0]
-                val wkVal: T = getCurrentAttrubuteValue(valueNode)
+                val wkVal: T = getCurrentAttributeValue(valueNode)
                 if (wkVal == null) {
                     val alert = Alert(AlertType.ERROR, AbsDynamoDbInputDialog.Companion.VALIDATION_MSG_INVALID_VALUE)
                     alert.showAndWait()
@@ -111,9 +112,9 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
 	 * 
 	 */
     abstract val typeString: String
-    abstract fun getAttrubuteBox(recIndex: Int, attr: T): Node
-    abstract fun getCurrentAttrubuteValue(valueNode: Node): T
-    abstract val initAttribute: T
+    abstract fun getAttributeBox(recIndex: Int, attr: T): Node
+    abstract fun getCurrentAttributeValue(valueNode: Node): T
+    abstract val initialAttribute: T
 
     /*
 	 * for validation
@@ -130,11 +131,11 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         return addAttributeMap
     }
 
-    fun validationCheck(attrVal: T): Boolean {
+    private fun validationCheck(attrVal: T): Boolean {
         val currentBodyNodeList = currentBodyNodeList
         for (wkNodeList in currentBodyNodeList) {
-            val valuebox = wkNodeList!![0]
-            val wkAttr = getCurrentAttrubuteValue(valuebox)
+            val valueBox = wkNodeList!![0]
+            val wkAttr = getCurrentAttributeValue(valueBox)
             if (isSameValue(wkAttr, attrVal)) {
                 val alert = Alert(AlertType.ERROR, VALIDATION_MSG_DUP_VALUE)
                 alert.showAndWait()
@@ -146,18 +147,13 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
     }
 
     private fun getOneBodyAttributeNodeList(recIdx: Int, attrVal: T): List<Node> {
-        val valueNode = getAttrubuteBox(recIdx, attrVal)
+        val valueNode = getAttributeBox(recIdx, attrVal)
         val delCheck = CheckBox()
         delCheck.id = AbsDynamoDbInputDialog.Companion.DEL_ID_PREFIX + recIdx.toString()
         val nodeList: MutableList<Node> = ArrayList()
         nodeList.add(valueNode)
         nodeList.add(delCheck)
         return nodeList
-    }
-
-    override fun initialize() {
-        super.initialize()
-        addValueNode = getAttrubuteBox(newRecIdx, initAttribute)
     }
 
     companion object {
