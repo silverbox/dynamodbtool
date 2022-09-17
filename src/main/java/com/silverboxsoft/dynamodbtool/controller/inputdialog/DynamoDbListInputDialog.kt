@@ -28,15 +28,15 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
         }
     override val headerLabelList: List<Node>
         get() {
-            val indexTitilelabel = getContentLabel("INDEX", true)
-            val typeTitilelabel = getContentLabel("TYPE", true)
-            val valTtilelabel = getContentLabel("VALUE", true)
-            val delTtilelabel = getContentLabel("DEL", true)
+            val indexTitleLabel = getContentLabel("INDEX", true)
+            val typeTitleLabel = getContentLabel("TYPE", true)
+            val valTitleLabel = getContentLabel("VALUE", true)
+            val delTitleLabel = getContentLabel("DEL", true)
             val retList: MutableList<Node> = ArrayList()
-            retList.add(indexTitilelabel)
-            retList.add(typeTitilelabel)
-            retList.add(valTtilelabel)
-            retList.add(delTtilelabel)
+            retList.add(indexTitleLabel)
+            retList.add(typeTitleLabel)
+            retList.add(valTitleLabel)
+            retList.add(delTitleLabel)
             return retList
         }
     override val bodyAttributeNodeList: List<List<Node>>

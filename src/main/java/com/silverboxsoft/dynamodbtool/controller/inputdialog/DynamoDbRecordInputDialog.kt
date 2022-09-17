@@ -63,8 +63,8 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
                 valNode.style = "-fx-background-color: lightgray;"
                 valNode.isEditable = false
             }
-            val delbox = retList[delColIndex] as CheckBox
-            delbox.isDisable = true
+            val delBox = retList[delColIndex] as CheckBox
+            delBox.isDisable = true
         }
         return retList
     }
@@ -103,7 +103,7 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
 
     init {
         this.title = DynamoDbUtils.Companion.getKeyValueStr(tableInfo, dynamoDbRecord)
-        // tblStructColumnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
+        tblStructColumnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
         val keyInfoList = tableInfo.keySchema()
         keyInfoList.stream().forEach { elem: KeySchemaElement -> keyColumnSet.add(elem.attributeName()) }
         // initialize() // TODO work around

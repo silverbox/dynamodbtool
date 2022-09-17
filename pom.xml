@@ -75,6 +75,11 @@
       </dependency>
       <dependency>
           <groupId>org.jetbrains.kotlin</groupId>
+          <artifactId>kotlin-runtime</artifactId>
+          <version>1.1.2-3</version>
+      </dependency>
+      <dependency>
+          <groupId>org.jetbrains.kotlin</groupId>
           <artifactId>kotlin-test</artifactId>
           <version>${kotlin.version}</version>
           <scope>test</scope>

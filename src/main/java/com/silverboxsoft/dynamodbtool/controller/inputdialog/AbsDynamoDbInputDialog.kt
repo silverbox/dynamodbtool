@@ -1,26 +1,19 @@
 package com.silverboxsoft.dynamodbtool.controller.inputdialog
 
-import javafx.stage.Stage
-import javafx.scene.layout.GridPane
-import javafx.scene.layout.AnchorPane
-import javafx.scene.layout.HBox
-import javafx.scene.layout.ColumnConstraints
-import javafx.scene.control.ScrollPane.ScrollBarPolicy
-import javafx.beans.value.ObservableValue
-import javafx.scene.layout.BorderPane
-import javafx.scene.control.ButtonBar.ButtonData
-import javafx.scene.layout.RowConstraints
 import javafx.beans.value.ChangeListener
+import javafx.beans.value.ObservableValue
 import javafx.event.ActionEvent
 import javafx.event.EventHandler
 import javafx.geometry.Insets
 import javafx.geometry.Pos
 import javafx.scene.Node
 import javafx.scene.control.*
+import javafx.scene.control.ButtonBar.ButtonData
+import javafx.scene.control.ScrollPane.ScrollBarPolicy
+import javafx.scene.layout.*
 import javafx.stage.Screen
-import software.amazon.awssdk.services.dynamodb.model.*
-import java.lang.StringBuilder
-import java.util.ArrayList
+import javafx.stage.Stage
+import software.amazon.awssdk.services.dynamodb.model.AttributeValue
 
 abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String) : Dialog<R>() {
     private val headGridPane: GridPane
@@ -181,7 +174,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         }
         scrollPane.hbarPolicy = ScrollBarPolicy.NEVER
         val finalOffset = offset
-        val stageSizeListener = ChangeListener { observable: ObservableValue<out Number>?, oldValue: Number?, newValue: Number ->
+        val stageSizeListener = ChangeListener { _: ObservableValue<out Number>?, _: Number?, newValue: Number ->
             val newColWidth = newValue.toDouble() - finalOffset - HGAP * (headerWidthList.size - 1)
             gridPane.columnConstraints[valueColIndex].prefWidth = newColWidth
             headGridPane.columnConstraints[valueColIndex].prefWidth = newColWidth
@@ -195,7 +188,14 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         for (cIdx in newNodeList.indices) {
             gridPane.add(newNodeList[cIdx], cIdx, newIdx)
         }
+//        dialogPane.setMaxSize(dialogPane.maxWidth, dialogPane.height + GRID_MIN_HEIGHT.toDouble())
+//        gridAnchorPane.maxHeight = gridAnchorPane.maxHeight + GRID_MIN_HEIGHT.toDouble()
+//        dialogPane.maxHeight = dialogPane.height + GRID_MIN_HEIGHT.toDouble()
+//        val additionalHeight = 30.0
+//        dialogPane.resize(dialogPane.width, dialogPane.height  + additionalHeight)
+//        gridAnchorPane.resize(gridAnchorPane.width, gridAnchorPane.height + additionalHeight)
         addBodyAttributeNodeList.add(newNodeList)
+        updateFooter()
     }
 
     protected fun updateFooter() {
@@ -246,7 +246,7 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
         }
 
         fun getBooleanInput(attrVal: AttributeValue): HBox {
-            val hbox = HBox(HGAP)
+            val hBox = HBox(HGAP)
             val radioButtonTrue = RadioButton()
             val radioButtonFalse = RadioButton()
             radioButtonTrue.text = "TRUE"
@@ -256,15 +256,15 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
             radioButtonFalse.toggleGroup = toggleGroup
             radioButtonTrue.isSelected = attrVal.bool()
             radioButtonFalse.isSelected = !attrVal.bool()
-            hbox.children.addAll(radioButtonTrue, radioButtonFalse)
-            return hbox
+            hBox.children.addAll(radioButtonTrue, radioButtonFalse)
+            return hBox
         }
 
         val nullViewLabel: Node
             get() = getContentLabel("<null>")
 
-        fun getBooleanValue(hbox: HBox): Boolean {
-            val radioButtonTrue = hbox.children[0] as RadioButton
+        fun getBooleanValue(hBox: HBox): Boolean {
+            val radioButtonTrue = hBox.children[0] as RadioButton
             return radioButtonTrue.isSelected
         }
 

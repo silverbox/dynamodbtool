@@ -75,6 +75,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
     override fun getFooterNodeList(): List<Node> {
         val retList: MutableList<Node> = ArrayList()
         addAttrValueNode = getAttributeBox(ADD_ATTR_NAME, selectedAddType.initValue)
+        addAttrNameTextField.text = ""
         retList.add(typeComboBox)
         retList.add(addAttrNameTextField)
         retList.add(addAttrValueNode)
@@ -89,8 +90,8 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
             return
         }
         updAttributeMap[attrName] = attrVal
-        val nodelList = getOneBodyAttributeNodeList(attrName, attrVal)
-        addAttributeNodeList(nodelList)
+        val nodeList = getOneBodyAttributeNodeList(attrName, attrVal)
+        addAttributeNodeList(nodeList)
         attrNameList.add(attrName)
     }
 
