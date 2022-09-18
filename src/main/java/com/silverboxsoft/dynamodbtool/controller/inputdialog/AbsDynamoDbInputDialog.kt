@@ -49,6 +49,8 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
 	 */
     abstract val editedDynamoDbRecord: R
     abstract val emptyAttr: R
+    abstract fun isValueChanged(): Boolean
+    abstract fun isAddValueRemain(): Boolean
 
     /*
 	 * for add attribute action
@@ -79,11 +81,32 @@ abstract class AbsDynamoDbInputDialog<R>(dynamoDbRecord: R, dialogTitle: String)
     }
 
     protected open fun doFinalConfirmation(dialogEvent: DialogEvent) {
-        if (buttonData != ButtonData.OK_DONE) {
-            return
+        if (buttonData == ButtonData.OK_DONE) {
+            if (isAddValueRemain()){
+                val dialog = Dialog<ButtonType>()
+                dialog.contentText = "It's seems forgot to add the value. it's OK to close?"
+                dialog.dialogPane.buttonTypes.addAll(ButtonType.YES, ButtonType.NO)
+                dialog.showAndWait().ifPresent { buttonType: ButtonType ->
+                    if (buttonType != ButtonType.YES) {
+                        dialogEvent.consume()
+                    }
+                }
+            }
+        } else {
+            if (isValueChanged() || isAddValueRemain()){
+                val dialog = Dialog<ButtonType>()
+                dialog.contentText = "Some value is changed. it's OK to cancel?"
+                dialog.dialogPane.buttonTypes.addAll(ButtonType.YES, ButtonType.NO)
+                dialog.showAndWait().ifPresent { buttonType: ButtonType ->
+                    if (buttonType != ButtonType.YES) {
+                        dialogEvent.consume()
+                    }
+                }
+            }
+            return // close
         }
         if (!isValidData) {
-            dialogEvent.consume()
+            dialogEvent.consume() // cancel
         }
     }
 
