@@ -1,5 +1,7 @@
 package com.silverboxsoft.dynamodbtool.controller.inputdialog
 
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnType
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnTypeCategory
 import javafx.scene.layout.HBox
 import java.util.HashMap
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils
@@ -11,6 +13,7 @@ import javafx.scene.control.*
 import software.amazon.awssdk.services.dynamodb.model.*
 import software.amazon.awssdk.utils.StringUtils
 import java.util.ArrayList
+import kotlin.reflect.typeOf
 
 open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, dialogTitle: String)
     : AbsDynamoDbDocumentInputDialog<Map<String, AttributeValue>>(dynamoDbRecord, dialogTitle) {
@@ -18,6 +21,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
     private var addAttrValueNode: Node = getAttributeBox(ADD_ATTR_NAME, selectedAddType.initValue)
     private val updAttributeMap: MutableMap<String, AttributeValue> = HashMap()
     private var tempAddAttrValue: AttributeValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+    private var isDocAttrUpdated: Boolean = false
 
     protected var attrNameList: MutableList<String> = ArrayList()
     override val headerWidthList: List<Int>
@@ -72,6 +76,41 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
     override val emptyAttr: Map<String, AttributeValue>
         get() = HashMap<String, AttributeValue>()
 
+    override fun isValueChanged(): Boolean {
+        if (isDocAttrUpdated) {
+            return true
+        }
+        val edited = editedDynamoDbRecord
+        if (edited.size != dynamoDbRecordOrg.size) {
+            return true
+        }
+        for (attrName in dynamoDbRecordOrg.keys) {
+            val orgVal = dynamoDbRecordOrg[attrName] ?: continue
+            val curVal = edited[attrName] ?: continue
+            val orgType = DynamoDbUtils.Companion.getDynamoDbColumnType(orgVal)
+            val curType = DynamoDbUtils.Companion.getDynamoDbColumnType(curVal)
+            if (orgType.category != DynamoDbColumnTypeCategory.SCALAR) {
+                continue
+            }
+            if (orgType != curType) {
+                return true
+            }
+            val orgValStr = DynamoDbUtils.Companion.getAttrString(orgVal)
+            val curValStr = DynamoDbUtils.Companion.getAttrString(curVal)
+            if (orgValStr != curValStr) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    override fun isAddValueRemain(): Boolean {
+        val attrVal = getAttributeFromNode(addAttrValueNode)
+        return (tempAddAttrValue != AbsDynamoDbInputDialog.NULL_ATTRIBUTE) || (addAttrNameTextField.text != "")
+                || (attrVal != selectedAddType.initValue)
+    }
+
     override fun getFooterNodeList(): List<Node> {
         val retList: MutableList<Node> = ArrayList()
         addAttrValueNode = getAttributeBox(ADD_ATTR_NAME, selectedAddType.initValue)
@@ -103,9 +142,9 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
                 if (delCheck.isSelected) {
                     continue
                 }
-                val keylabel = wkNodeList[COL_IDX_NAME] as Label
+                val keyLabel = wkNodeList[COL_IDX_NAME] as Label
                 val valueNode = wkNodeList[valueColIndex]
-                if (!checkValueNode(keylabel.text, valueNode)) {
+                if (!checkValueNode(keyLabel.text, valueNode)) {
                     val alert = Alert(AlertType.ERROR, AbsDynamoDbInputDialog.Companion.VALIDATION_MSG_INVALID_VALUE)
                     alert.showAndWait()
                     valueNode.requestFocus()
@@ -142,6 +181,8 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
         val attrName: String = btnId.substring(AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX.length)
         if (attrName == ADD_ATTR_NAME) {
             tempAddAttrValue = attrVal
+        } else {
+            isDocAttrUpdated = true
         }
         val valLabelNode = dialogPane.lookup(String.format("#%s", AbsDynamoDbInputDialog.Companion.VALLBL_ID_PREFIX + attrName))
         if (valLabelNode != null && valLabelNode is Label) {
@@ -155,6 +196,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
 
     override fun onAddTypeComboSelChanged(oldValue: String?, newValue: String?) {
         tempAddAttrValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+        isDocAttrUpdated = false
         updateFooter()
     }
 
@@ -204,7 +246,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
     }
 
     private fun getAttrEditButton(attrName: String?, text: String): HBox {
-        val hbox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
+        val hBox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
         val valLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(text)
         valLabel.id = AbsDynamoDbInputDialog.Companion.VALLBL_ID_PREFIX + attrName
         val button = Button()
@@ -214,8 +256,8 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
             val wkBtn = event.source as Button
             actOpenEditDialog(wkBtn.id)
         }
-        hbox.children.addAll(button, valLabel)
-        return hbox
+        hBox.children.addAll(button, valLabel)
+        return hBox
     }
 
     /*

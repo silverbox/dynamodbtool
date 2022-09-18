@@ -68,6 +68,25 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         return retList
     }
 
+    override fun isValueChanged(): Boolean {
+        val edited =  editedDynamoDbRecord
+        if (edited.size != dynamoDbRecordOrg.size) {
+            return true
+        }
+        for (recIdx in dynamoDbRecordOrg.indices) {
+            val orgVal = dynamoDbRecordOrg[recIdx]
+            val curVal = edited[recIdx]
+            if (!isSameValue(orgVal, curVal)) {
+                return true
+            }
+        }
+        return false
+    }
+    override fun isAddValueRemain(): Boolean {
+        val curVal = getCurrentAttributeValue(addValueNode)
+        return !isSameValue(initialAttribute, curVal)
+    }
+
     override fun actAddNewAttribute() {
         val recIdx = newRecIdx
         val newIdStr = recIdx.toString()

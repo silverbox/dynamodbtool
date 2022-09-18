@@ -1,5 +1,6 @@
 package com.silverboxsoft.dynamodbtool.controller.inputdialog
 
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnTypeCategory
 import javafx.scene.layout.HBox
 import java.util.HashMap
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils
@@ -17,6 +18,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
     private val updAttributeMap: MutableMap<String, AttributeValue> = HashMap()
     private var addAttributeMap: MutableMap<String, AttributeValue> = HashMap()
     private var tempAddAttrValue: AttributeValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+    private var isDocAttrUpdated: Boolean = false
+
     override val headerWidthList: List<Int>
         get() {
             val retList: MutableList<Int> = ArrayList()
@@ -67,6 +70,40 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
         }
     override val emptyAttr: List<AttributeValue>
         get() = ArrayList<AttributeValue>()
+
+    override fun isValueChanged(): Boolean {
+        if (isDocAttrUpdated) {
+            return true
+        }
+        val edited = editedDynamoDbRecord
+        if (edited.size != dynamoDbRecordOrg.size) {
+            return true
+        }
+        for (idx in dynamoDbRecordOrg.indices) {
+            val orgVal = dynamoDbRecordOrg[idx]
+            val curVal = edited[idx]
+            val orgType = DynamoDbUtils.Companion.getDynamoDbColumnType(orgVal)
+            val curType = DynamoDbUtils.Companion.getDynamoDbColumnType(curVal)
+            if (orgType.category != DynamoDbColumnTypeCategory.SCALAR) {
+                continue
+            }
+            if (orgType != curType) {
+                return true
+            }
+            val orgValStr = DynamoDbUtils.Companion.getAttrString(orgVal)
+            val curValStr = DynamoDbUtils.Companion.getAttrString(curVal)
+            if (orgValStr != curValStr) {
+                return true
+            }
+        }
+
+        return false
+    }
+
+    override fun isAddValueRemain(): Boolean {
+        val attrVal = getAttributeFromNode(addAttrValueNode)
+        return tempAddAttrValue != AbsDynamoDbInputDialog.NULL_ATTRIBUTE || attrVal != selectedAddType.initValue
+    }
 
     override fun getFooterNodeList(): List<Node> {
         val retList: MutableList<Node> = ArrayList()
@@ -142,6 +179,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
         }
         if (idStr == ADD_INDEX.toString()) {
             tempAddAttrValue = attrVal
+        } else {
+            isDocAttrUpdated = true
         }
         updAttributeMap[idStr] = attrVal
     }
@@ -151,6 +190,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
 
     override fun onAddTypeComboSelChanged(oldValue: String?, newValue: String?) {
         tempAddAttrValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+        isDocAttrUpdated = false
         updateFooter()
     }
 

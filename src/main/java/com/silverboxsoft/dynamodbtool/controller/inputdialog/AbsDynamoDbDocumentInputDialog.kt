@@ -91,26 +91,24 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
 	 */
     protected fun getAttributeFromNode(valueNode: Node): AttributeValue {
         if (valueNode is HBox) {
-            val wkBox = valueNode
-            val wkNode = wkBox.children[0]
+            val wkNode = valueNode.children[0]
             return if (wkNode is RadioButton) {
-                AttributeValue.builder().bool(AbsDynamoDbInputDialog.Companion.getBooleanValue(wkBox)).build()
+                AttributeValue.builder().bool(AbsDynamoDbInputDialog.Companion.getBooleanValue(valueNode)).build()
             } else {
                 val button = wkNode as Button
                 getAttributeFromEditButtonId(button.id)
             }
         } else if (valueNode is TextField) {
-            val valTextField = valueNode
-            val id = valTextField.id
+            val id = valueNode.id
             when {
                 id.startsWith(AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX) -> {
-                    return AttributeValue.builder().s(valTextField.text).build()
+                    return AttributeValue.builder().s(valueNode.text).build()
                 }
                 id.startsWith(AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX) -> {
-                    return AttributeValue.builder().n(valTextField.text).build()
+                    return AttributeValue.builder().n(valueNode.text).build()
                 }
                 id.startsWith(AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX) -> {
-                    val sdkBytes: SdkBytes = DynamoDbUtils.Companion.getSdkBytesFromBase64String(valTextField.text)
+                    val sdkBytes: SdkBytes = DynamoDbUtils.Companion.getSdkBytesFromBase64String(valueNode.text)
                     return AttributeValue.builder().b(sdkBytes).build()
                 }
             }
@@ -122,17 +120,16 @@ abstract class AbsDynamoDbDocumentInputDialog<T>(dynamoDbRecord: T, dialogTitle:
 
     protected fun checkValueNode(valueNode: Node?): Boolean {
         if (valueNode is TextField) {
-            val valTextField = valueNode
-            val id = valTextField.id
+            val id = valueNode.id
             when {
                 id.startsWith(AbsDynamoDbInputDialog.Companion.STRFLD_ID_PREFIX) -> {
                     return true
                 }
                 id.startsWith(AbsDynamoDbInputDialog.Companion.NUMFLD_ID_PREFIX) -> {
-                    return DynamoDbUtils.Companion.isNumericStr(valTextField.text)
+                    return DynamoDbUtils.Companion.isNumericStr(valueNode.text)
                 }
                 id.startsWith(AbsDynamoDbInputDialog.Companion.BINFLD_ID_PREFIX) -> {
-                    return DynamoDbUtils.Companion.isBase64Str(valTextField.text)
+                    return DynamoDbUtils.Companion.isBase64Str(valueNode.text)
                 }
             }
         }
