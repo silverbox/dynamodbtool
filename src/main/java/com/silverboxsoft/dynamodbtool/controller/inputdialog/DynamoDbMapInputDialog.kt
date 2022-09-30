@@ -20,7 +20,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
     var addAttrNameTextField: TextField = TextField(ADD_ATTR_NAME)
     private var addAttrValueNode: Node = getAttributeBox(ADD_ATTR_NAME, selectedAddType.initValue)
     private val updAttributeMap: MutableMap<String, AttributeValue> = HashMap()
-    private var tempAddAttrValue: AttributeValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+    private var tempAddAttrValue: AttributeValue = DynamoDbColumnType.MAP.initValue
     private var isDocAttrUpdated: Boolean = false
 
     protected var attrNameList: MutableList<String> = ArrayList()
@@ -106,9 +106,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
     }
 
     override fun isAddValueRemain(): Boolean {
-        val attrVal = getAttributeFromNode(addAttrValueNode)
-        return (tempAddAttrValue != AbsDynamoDbInputDialog.NULL_ATTRIBUTE) || (addAttrNameTextField.text != "")
-                || (attrVal != selectedAddType.initValue)
+        return (getAttributeFromNode(addAttrValueNode) != selectedAddType.initValue) || (addAttrNameTextField.text != "")
     }
 
     override fun getFooterNodeList(): List<Node> {
@@ -195,7 +193,7 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
         get() = AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX + ADD_ATTR_NAME
 
     override fun onAddTypeComboSelChanged(oldValue: String?, newValue: String?) {
-        tempAddAttrValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+        tempAddAttrValue = selectedAddType.initValue
         isDocAttrUpdated = false
         updateFooter()
     }
