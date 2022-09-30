@@ -1,5 +1,6 @@
 package com.silverboxsoft.dynamodbtool.controller.inputdialog
 
+import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnType
 import com.silverboxsoft.dynamodbtool.classes.DynamoDbColumnTypeCategory
 import javafx.scene.layout.HBox
 import java.util.HashMap
@@ -17,7 +18,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
     private var addAttrValueNode: Node = getAttributeBox(ADD_INDEX, selectedAddType.initValue)
     private val updAttributeMap: MutableMap<String, AttributeValue> = HashMap()
     private var addAttributeMap: MutableMap<String, AttributeValue> = HashMap()
-    private var tempAddAttrValue: AttributeValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+    private var tempAddAttrValue: AttributeValue = DynamoDbColumnType.LIST.initValue
     private var isDocAttrUpdated: Boolean = false
 
     override val headerWidthList: List<Int>
@@ -101,8 +102,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
     }
 
     override fun isAddValueRemain(): Boolean {
-        val attrVal = getAttributeFromNode(addAttrValueNode)
-        return tempAddAttrValue != AbsDynamoDbInputDialog.NULL_ATTRIBUTE || attrVal != selectedAddType.initValue
+        return getAttributeFromNode(addAttrValueNode) != selectedAddType.initValue
     }
 
     override fun getFooterNodeList(): List<Node> {
@@ -123,8 +123,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
             return
         }
         getAddAttributeMap()[newIdStr] = attrVal
-        val nodelList = getOneBodyAttributeNodeList(recIdx, attrVal)
-        addAttributeNodeList(nodelList)
+        val nodeList = getOneBodyAttributeNodeList(recIdx, attrVal)
+        addAttributeNodeList(nodeList)
     }
 
     override val isFinalValidationOk: Boolean
@@ -189,7 +189,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
         get() = AbsDynamoDbInputDialog.Companion.EDTBTN_ID_PREFIX + ADD_INDEX.toString()
 
     override fun onAddTypeComboSelChanged(oldValue: String?, newValue: String?) {
-        tempAddAttrValue = AbsDynamoDbInputDialog.NULL_ATTRIBUTE
+        tempAddAttrValue = selectedAddType.initValue
         isDocAttrUpdated = false
         updateFooter()
     }
@@ -241,7 +241,7 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
 
     private fun getAttrEditButton(recIndex: Int, text: String): Node {
         val idStr = recIndex.toString()
-        val hbox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
+        val hBox = HBox(AbsDynamoDbInputDialog.Companion.HGAP)
         val valLabel: Label = AbsDynamoDbInputDialog.Companion.getContentLabel(text)
         valLabel.id = AbsDynamoDbInputDialog.Companion.VALLBL_ID_PREFIX + idStr
         val button = Button()
@@ -251,8 +251,8 @@ class DynamoDbListInputDialog(dynamoDbRecord: List<AttributeValue>, dialogTitle:
             val wkBtn = event.source as Button
             actOpenEditDialog(wkBtn.id)
         }
-        hbox.children.addAll(button, valLabel)
-        return hbox
+        hBox.children.addAll(button, valLabel)
+        return hBox
     }
 
     private fun getAddAttributeMap(): MutableMap<String, AttributeValue> {
