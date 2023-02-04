@@ -103,6 +103,7 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
         get() {
             val checkSet: MutableSet<T> = HashSet()
             val currentBodyNodeList = currentBodyNodeList
+            var itemCount = 0
             for (wkNodeList in currentBodyNodeList) {
                 val delCheck = wkNodeList[1] as CheckBox
                 if (delCheck.isSelected) {
@@ -122,7 +123,13 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
                     valueNode.requestFocus()
                     return false
                 }
+                itemCount += 1
                 checkSet.add(wkVal)
+            }
+            if (itemCount == 0) {
+                val alert = Alert(AlertType.ERROR, VALIDATION_MSG_EMPTY)
+                alert.showAndWait()
+                return false
             }
             return true
         }
@@ -177,6 +184,7 @@ abstract class AbsDynamoDbSetInputDialog<T>(dynamoDbRecord: List<T>, dialogTitle
 
     companion object {
         protected const val VALIDATION_MSG_DUP_VALUE = "Same value exists. please change the value"
+        protected const val VALIDATION_MSG_EMPTY = "Empty set not allowed. please set one or more values"
     }
 
     init {

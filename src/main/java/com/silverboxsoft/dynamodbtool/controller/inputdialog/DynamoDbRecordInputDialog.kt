@@ -17,7 +17,8 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
                                 private val editMode: DynamoDbEditMode
 ) : DynamoDbMapInputDialog(dynamoDbRecord, "") {
     private var tblStructColumnList: List<DynamoDbColumn> = ArrayList()
-    private var keyColumnSet: MutableSet<String> = HashSet()
+    private val keyColumnSet: MutableSet<String> = HashSet()
+    private val requireColumnSet: MutableSet<String> = HashSet()
     // add key info first
 
     // pick up the data which attribute name is come yet.
@@ -37,7 +38,7 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
                 val attrName = tblStructColumnList[colIdx].columnName
                 val wkAttr = dynamoDbRecordOrg.getOrDefault(attrName, AbsDynamoDbInputDialog.NULL_ATTRIBUTE)
                 retList.add(getOneBodyAttributeNodeList(attrName, wkAttr))
-                attrNameList!!.add(attrName)
+                attrNameList.add(attrName)
             }
 
             // pick up the data which attribute name is come yet.
@@ -83,29 +84,37 @@ class DynamoDbRecordInputDialog(tableInfo: TableDescription, dynamoDbRecord: Map
         }
     }
 
-    override fun checkValueNode(attrName: String?, valueNode: Node?): Boolean {
-        if (!super.checkValueNode(valueNode)) {
-            return false
-        }
-        if (keyColumnSet.contains(attrName) && valueNode is TextField) {
+    override fun checkAndGetErrorMessage(attrName: String?, valueNode: Node?): String? {
+        if (requireColumnSet.contains(attrName) && valueNode is TextField) {
             if (StringUtils.isEmpty(valueNode.text)) {
-                val alert = Alert(AlertType.ERROR, VALIDATION_MSG_EMPTY_VALUE)
-                alert.showAndWait()
-                return false
+                return VALIDATION_MSG_EMPTY_VALUE
             }
         }
-        return true
+        return super.checkAndGetErrorMessage(attrName, valueNode)
     }
 
     companion object {
-        const val VALIDATION_MSG_EMPTY_VALUE = "Key value should be non null."
+        const val VALIDATION_MSG_EMPTY_VALUE = "Attribute for key (or index) value should not be null."
     }
 
     init {
         this.title = DynamoDbUtils.Companion.getKeyValueStr(tableInfo, dynamoDbRecord)
         tblStructColumnList = DynamoDbUtils.Companion.getSortedDynamoDbColumnList(tableInfo)
         val keyInfoList = tableInfo.keySchema()
-        keyInfoList.stream().forEach { elem: KeySchemaElement -> keyColumnSet.add(elem.attributeName()) }
+        for (elem in keyInfoList) {
+            keyColumnSet.add(elem.attributeName())
+            requireColumnSet.add(elem.attributeName())
+        }
+        tableInfo.globalSecondaryIndexes().stream().forEach {
+            gsiDesc: GlobalSecondaryIndexDescription -> gsiDesc.keySchema().stream().forEach {
+                elem: KeySchemaElement -> requireColumnSet.add(elem.attributeName())
+            }
+        }
+        tableInfo.localSecondaryIndexes().stream().forEach {
+            lsiDesc: LocalSecondaryIndexDescription -> lsiDesc.keySchema().stream().forEach {
+                elem: KeySchemaElement -> requireColumnSet.add(elem.attributeName())
+            }
+        }
         // initialize() // TODO work around
     }
 }

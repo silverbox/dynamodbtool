@@ -142,8 +142,9 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
                 }
                 val keyLabel = wkNodeList[COL_IDX_NAME] as Label
                 val valueNode = wkNodeList[valueColIndex]
-                if (!checkValueNode(keyLabel.text, valueNode)) {
-                    val alert = Alert(AlertType.ERROR, AbsDynamoDbInputDialog.Companion.VALIDATION_MSG_INVALID_VALUE)
+                val checkMessage = checkAndGetErrorMessage(keyLabel.text, valueNode)
+                if (checkMessage != null) {
+                    val alert = Alert(AlertType.ERROR, checkMessage)
                     alert.showAndWait()
                     valueNode.requestFocus()
                     return false
@@ -152,8 +153,11 @@ open class DynamoDbMapInputDialog(dynamoDbRecord: Map<String, AttributeValue>, d
             return true
         }
 
-    protected open fun checkValueNode(attrName: String?, valueNode: Node?): Boolean {
-        return super.checkValueNode(valueNode)
+    protected open fun checkAndGetErrorMessage(attrName: String?, valueNode: Node?): String? {
+        if (!super.checkValueNode(valueNode)) {
+            return AbsDynamoDbInputDialog.Companion.VALIDATION_MSG_INVALID_VALUE
+        }
+        return null
     }
 
     /*

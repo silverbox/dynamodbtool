@@ -16,7 +16,6 @@ import javafx.fxml.Initializable
 import java.util.ResourceBundle
 import com.silverboxsoft.dynamodbtool.dao.TableListDao
 import javafx.concurrent.Task
-import javafx.event.ActionEvent
 import javafx.event.EventHandler
 import javafx.scene.control.*
 import javafx.scene.input.MouseEvent
@@ -67,14 +66,14 @@ class DynamoDbToolController : Initializable {
     /*
 	 * event handler
 	 */
-    private var dialog: Alert = Alert(AlertType.INFORMATION)
+    private var loadingDialog: Alert = Alert(AlertType.INFORMATION)
     override fun initialize(location: URL, resources: ResourceBundle?) {
         initCmb()
         initLoadDialog()
     }
 
     @FXML
-    fun actTableListLoad(ev: ActionEvent?) {
+    fun actTableListLoad() {
         val errInfo = DynamoDbErrorInfo()
         val task: Task<Boolean> = object : Task<Boolean>() {
             @Throws(Exception::class)
@@ -92,10 +91,10 @@ class DynamoDbToolController : Initializable {
                 return true
             }
         }
-        task.onRunning = EventHandler { e: WorkerStateEvent? -> dialog!!.show() }
-        task.onSucceeded = EventHandler { e: WorkerStateEvent? -> dialog!!.hide() }
-        task.onFailed = EventHandler { e: WorkerStateEvent? ->
-            dialog!!.hide()
+        task.onRunning = EventHandler { loadingDialog.show() }
+        task.onSucceeded = EventHandler { loadingDialog.hide() }
+        task.onFailed = EventHandler {
+            loadingDialog.hide()
             val alert = Alert(AlertType.ERROR, errInfo.message)
             alert.show()
         }
@@ -104,39 +103,46 @@ class DynamoDbToolController : Initializable {
 
     @FXML
     @Throws(Exception::class)
-    fun actLoad(ev: ActionEvent?) {
+    fun actLoad() {
         val activeTable = activeDynamoDbTable ?: return
-        activeTable.actLoad(ev)
+        activeTable.actLoad()
     }
 
     @FXML
     @Throws(Exception::class)
-    fun actAdd(ev: ActionEvent?) {
+    fun actAdd() {
         val activeTable = activeDynamoDbTable ?: return
-        activeTable.actAdd(ev)
+        activeTable.actAdd()
     }
 
     @FXML
     @Throws(Exception::class)
-    fun actDel(ev: ActionEvent?) {
+    fun actDel() {
         val activeTable = activeDynamoDbTable ?: return
-        activeTable.actDel(ev)
+        activeTable.actDel()
     }
 
     @FXML
     @Throws(Exception::class)
-    fun actCopyAdd(ev: ActionEvent?) {
+    fun actBulkDel() {
         val activeTable = activeDynamoDbTable ?: return
-        activeTable.actCopyAdd(ev)
+        activeTable.actBulkDel()
     }
 
     @FXML
     @Throws(Exception::class)
-    fun actShowTableInfo(ev: ActionEvent?) {
+    fun actCopyAdd() {
+        val activeTable = activeDynamoDbTable ?: return
+        activeTable.actCopyAdd()
+    }
+
+    @FXML
+    @Throws(Exception::class)
+    fun actShowTableInfo() {
         val activeTable = activeDynamoDbTable ?: return
         val desc = activeTable.tableInfo
         val sb = StringBuilder()
-        sb.append("Table name = ").append(desc!!.tableName()).append("\r\n")
+        sb.append("Table name = ").append(desc.tableName()).append("\r\n")
         sb.append("Record count = ").append(desc.itemCount()).append("\r\n")
         sb.append("Byte size = ").append(desc.tableSizeBytes()).append("\r\n")
         sb.append("---- Partition key ----").append("\r\n")
@@ -179,7 +185,7 @@ class DynamoDbToolController : Initializable {
     }
 
     @FXML
-    fun actCloseActiveTab(ev: ActionEvent?) {
+    fun actCloseActiveTab() {
         val activeIndex = tabPaneTable!!.selectionModel.selectedIndex
         if (tabPaneTable!!.tabs.size > 1) {
             tabPaneTable!!.tabs.removeAt(activeIndex)
@@ -187,7 +193,7 @@ class DynamoDbToolController : Initializable {
     }
 
     @FXML
-    fun actCloseAllNonActiveTab(ev: ActionEvent?) {
+    fun actCloseAllNonActiveTab() {
         val activeIndex = tabPaneTable!!.selectionModel.selectedIndex
         val tabCount = tabPaneTable!!.tabs.size
         for (wkIdx in activeIndex + 1 until tabCount) {
@@ -205,7 +211,7 @@ class DynamoDbToolController : Initializable {
     fun actTableDecided() {
         try {
             val tableName = lvTableList!!.selectionModel.selectedItem
-            val dbTable = DynamoDbTable(connectInfo, tableName, dialog)
+            val dbTable = DynamoDbTable(connectInfo, tableName, loadingDialog)
             dbTable.initialize()
             val newTab = Tab()
             newTab.text = tableName
@@ -224,9 +230,9 @@ class DynamoDbToolController : Initializable {
 	 * method
 	 */
     private fun initLoadDialog() {
-        dialog.headerText = null
-        dialog.contentText = "Now Loading..."
-        val pane: Pane = dialog.dialogPane
+        loadingDialog.headerText = null
+        loadingDialog.contentText = "Now Loading..."
+        val pane: Pane = loadingDialog.dialogPane
         val nodes = pane.children
         for (node in nodes) {
             (node as? ButtonBar)?.isVisible = false
