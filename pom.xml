@@ -15,7 +15,7 @@
     <maven.compiler.source>1.8</maven.compiler.source>
     <maven.compiler.target>1.8</maven.compiler.target>
     <start-class>com.silverboxsoft.App</start-class>
-      <kotlin.version>1.5.20</kotlin.version>
+    <kotlin.version>1.8.10</kotlin.version>
   </properties>
 
   <dependencyManagement>
@@ -75,12 +75,12 @@
       </dependency>
       <dependency>
           <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-runtime</artifactId>
-          <version>1.1.2-3</version>
+          <artifactId>kotlin-stdlib</artifactId>
+          <version>${kotlin.version}</version>
       </dependency>
       <dependency>
           <groupId>org.jetbrains.kotlin</groupId>
-          <artifactId>kotlin-test</artifactId>
+          <artifactId>kotlin-test-junit</artifactId>
           <version>${kotlin.version}</version>
           <scope>test</scope>
       </dependency>

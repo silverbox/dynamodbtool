@@ -104,6 +104,7 @@
                               <Button fx:id="btnAdd" mnemonicParsing="false" onAction="#actAdd" text="Add" />
                               <Button fx:id="btnCopyAdd" mnemonicParsing="false" onAction="#actCopyAdd" text="Copy add" />
                               <Button fx:id="btnDel" mnemonicParsing="false" onAction="#actDel" text="Delete" />
+                              <Button fx:id="btnBulkDel" mnemonicParsing="false" onAction="#actBulkDel" text="Delete selected" />
                           </items>
                         </ToolBar>
                         <AnchorPane layoutY="40.0" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" prefHeight="509.0" prefWidth="637.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="40.0">
