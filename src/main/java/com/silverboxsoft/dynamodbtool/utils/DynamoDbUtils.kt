@@ -17,42 +17,54 @@ import java.util.function.Function
 
 class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
     companion object {
-        const val NO_VALSTR = "<unset>"
+        const val STR_NO_VAL = "<unset>"
         fun getAttrString(attrVal: AttributeValue?): String {
-            if (attrVal == null) {
-                return NO_VALSTR
-            } else if (attrVal.s() != null) {
-                return attrVal.s()
-            } else if (attrVal.n() != null) {
-                return attrVal.n()
-            } else if (attrVal.b() != null) {
-                return getBase64StringFromSdkBytes(attrVal.b())
-            } else if (attrVal.bool() != null) {
-                return attrVal.bool().toString()
-            } else if (attrVal.hasSs()) {
-                return attrVal.ss().toString()
-            } else if (attrVal.hasNs()) {
-                return attrVal.ns().toString()
-            } else if (attrVal.hasBs()) {
-                return attrVal.bs().stream()
+            when {
+                attrVal == null -> {
+                    return STR_NO_VAL
+                }
+                attrVal.s() != null -> {
+                    return attrVal.s()
+                }
+                attrVal.n() != null -> {
+                    return attrVal.n()
+                }
+                attrVal.b() != null -> {
+                    return getBase64StringFromSdkBytes(attrVal.b())
+                }
+                attrVal.bool() != null -> {
+                    return attrVal.bool().toString()
+                }
+                attrVal.hasSs() -> {
+                    return attrVal.ss().toString()
+                }
+                attrVal.hasNs() -> {
+                    return attrVal.ns().toString()
+                }
+                attrVal.hasBs() -> {
+                    return attrVal.bs().stream()
                         .map { attr: SdkBytes -> getBase64StringFromSdkBytes(attr) }
                         .collect(Collectors.toList()).toString()
-            } else if (attrVal.hasM()) {
-                return attrVal.m().entries.stream()
+                }
+                attrVal.hasM() -> {
+                    return attrVal.m().entries.stream()
                         .collect(Collectors.toMap(Function<Map.Entry<String?, AttributeValue?>, String?> { (key) -> key }, Function<Map.Entry<String?, AttributeValue?>, String> { (_, value) -> getAttrString(value) }))
                         .toString()
-            } else if (attrVal.hasL()) {
-                return attrVal.l().stream().map { attr: AttributeValue? -> getAttrString(attr) }.collect(Collectors.toList()).toString()
-            } else if (isNullAttr(attrVal)) {
-                return "<null>"
+                }
+                attrVal.hasL() -> {
+                    return attrVal.l().stream().map { attr: AttributeValue? -> getAttrString(attr) }.collect(Collectors.toList()).toString()
+                }
+                isNullAttr(attrVal) -> {
+                    return "<null>"
+                }
+                else -> return attrVal.toString()
             }
-            return attrVal.toString()
         }
 
         fun getAttrTypeString(attrVal: AttributeValue): String {
             when {
                 attrVal == null -> {
-                    return NO_VALSTR
+                    return STR_NO_VAL
                 }
                 attrVal.s() != null -> {
                     return DynamoDbColumnType.STRING.displayStr
@@ -137,18 +149,18 @@ class DynamoDbUtils(connInfo: DynamoDbConnectInfo?) {
          * @param attr
          * @return
          */
-        fun getDynamoDbColumnType(attr: AttributeDefinition): DynamoDbColumnType {
-            when {
+        private fun getDynamoDbColumnType(attr: AttributeDefinition): DynamoDbColumnType {
+            return when {
                 attr.attributeType() == ScalarAttributeType.S -> {
-                    return DynamoDbColumnType.STRING
+                    DynamoDbColumnType.STRING
                 }
                 attr.attributeType() == ScalarAttributeType.N -> {
-                    return DynamoDbColumnType.NUMBER
+                    DynamoDbColumnType.NUMBER
                 }
                 attr.attributeType() == ScalarAttributeType.B -> {
-                    return DynamoDbColumnType.BINARY
+                    DynamoDbColumnType.BINARY
                 }
-                else -> return DynamoDbColumnType.NULL
+                else -> DynamoDbColumnType.NULL
             }
         }
 

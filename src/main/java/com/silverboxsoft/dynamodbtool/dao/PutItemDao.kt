@@ -15,11 +15,9 @@ class PutItemDao(connInfo: DynamoDbConnectInfo) : AbsDao(connInfo) {
     fun putItem(tableInfo: TableDescription?, dynamoDbRec: Map<String, AttributeValue>): PutItemResponse {
         val tableName = tableInfo!!.tableName()
         val ddb = dbClient
-        return try {
+        return ddb.use { ddb ->
             val request = PutItemRequest.builder().tableName(tableName).item(dynamoDbRec).build()
             ddb.putItem(request)
-        } finally {
-            ddb.close()
         }
     }
 }

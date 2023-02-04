@@ -8,22 +8,15 @@ import javafx.fxml.FXMLLoader
 import javafx.scene.layout.AnchorPane
 import javafx.beans.value.ObservableValue
 import java.net.URISyntaxException
-import java.util.HashMap
 import javafx.scene.control.Alert.AlertType
-import java.util.HashSet
 import com.silverboxsoft.dynamodbtool.controller.inputdialog.DynamoDbRecordInputDialog
 import javafx.fxml.FXML
 import com.silverboxsoft.dynamodbtool.consts.Messages
-import com.silverboxsoft.dynamodbtool.dao.PartiQLDao
-import com.silverboxsoft.dynamodbtool.dao.ScanDao
+import com.silverboxsoft.dynamodbtool.dao.*
 import javafx.concurrent.WorkerStateEvent
 import java.lang.Thread
 import com.silverboxsoft.dynamodbtool.types.CopyModeType
-import com.silverboxsoft.dynamodbtool.dao.TableInfoDao
 import javafx.scene.control.TableView.TableViewSelectionModel
-import com.silverboxsoft.dynamodbtool.dao.PutItemDao
-import com.silverboxsoft.dynamodbtool.dao.DeleteItemDao
-import com.silverboxsoft.dynamodbtool.dao.QueryDao
 import com.silverboxsoft.dynamodbtool.utils.DynamoDbUtils.Companion.getIndexInfo
 import javafx.scene.control.cell.TextFieldTableCell
 import javafx.beans.property.ReadOnlyObjectWrapper
@@ -39,9 +32,11 @@ import javafx.util.Pair
 import software.amazon.awssdk.services.dynamodb.model.*
 import software.amazon.awssdk.utils.StringUtils
 import java.lang.StringBuilder
-import java.util.ArrayList
+import java.util.*
+import java.util.stream.Collectors
+import kotlin.streams.toList
 
-class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val tableName: String, private val dialog: Alert) : AnchorPane() {
+class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val tableName: String, private val loadingDialog: Alert) : AnchorPane() {
     /*
 	 * Data Condition
 	 */
@@ -155,15 +150,15 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
                 return true
             }
         }
-        task.onRunning = EventHandler { e: WorkerStateEvent? -> dialog.show() }
-        task.onSucceeded = EventHandler { e: WorkerStateEvent? ->
+        task.onRunning = EventHandler { loadingDialog.show() }
+        task.onSucceeded = EventHandler {
             setTable(dynamoDbResult)
-            dialog.hide()
+            loadingDialog.hide()
         }
-        task.onFailed = EventHandler { e: WorkerStateEvent? ->
+        task.onFailed = EventHandler {
             val alert = Alert(AlertType.ERROR, errInfo.message)
             alert.show()
-            dialog.hide()
+            loadingDialog.hide()
         }
         Thread(task).start()
     }
@@ -322,9 +317,9 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
                 return
             }
         }
-
+        isCellSelectMode
         var targetStr: String? = null
-        targetStr = if (tableResultList!!.selectionModel.isCellSelectionEnabled) {
+        targetStr = if (isCellSelectMode) {
             getWholeTableSelectedCellString(selectedModel, type)
         } else {
             getWholeTableSelectedRowString(selectedModel, type)
@@ -355,17 +350,19 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
         }
         val newCondition = newConditionWk.get()
         val targetColIdxSet: Set<Int> = getSearchTargetColIdxList(newCondition.onlySelectedColumn)
-        val caredSearchWord = if (newCondition.caseSensitive) newCondition.searchWord else newCondition.searchWord.toLowerCase()
+        val caredSearchWord = if (newCondition.caseSensitive) newCondition.searchWord else newCondition.searchWord.lowercase(
+            Locale.getDefault()
+        )
         val regex = Regex(caredSearchWord)
 
         tableResultList!!.selectionModel.clearSelection()
         matchPosList.clear()
         for (visibleColIdx in targetColIdxSet) {
-            for (rIdx in (0 until dynamoDbResult.recordCount - 1)) {
+            for (rIdx in (0 until dynamoDbResult.recordCount)) {
                 val colName = tableResultList!!.columns[visibleColIdx].id
                 val dbColIdx = dynamoDbResult!!.getColumnIndexByName(colName)!!
                 val wkCellStr = tableResultList!!.items[rIdx].getData()[dbColIdx]
-                val chkStr = if (newCondition.caseSensitive) wkCellStr else wkCellStr.toLowerCase()
+                val chkStr = if (newCondition.caseSensitive) wkCellStr else wkCellStr.lowercase(Locale.getDefault())
                 val isMatch =
                     if (newCondition.searchAsRegEx) regex.containsMatchIn(chkStr)
                     else wkCellStr.contains(newCondition.searchWord, !newCondition.caseSensitive)
@@ -466,17 +463,10 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
         if (selectedRecords.size == 0) {
             return ""
         }
-        val posList = getPositionList(selectedModel)
-        val dupCheckSet: MutableSet<Int> = HashSet()
-        val colNameList: MutableList<String> = ArrayList()
-        for (posInfo in posList) {
-            val colPos = posInfo.key
-            if (!dupCheckSet.contains(colPos)) {
-                val colName = dynamoDbResult!!.getDynamoDbColumn(colPos.toInt()).columnName
-                colNameList.add(colName)
-            }
-            dupCheckSet.add(colPos)
-        }
+        val colNameList: MutableList<String> = dynamoDbResult!!.getDynamoDbColumnList().stream().map { column: DynamoDbColumn ->
+            column.columnName
+        }.toList() as MutableList<String>
+
         val selectedRowStrSb = StringBuilder()
         for (record in selectedRecords) {
             if (selectedRowStrSb.isNotEmpty()) {
@@ -486,6 +476,8 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
             selectedRowStrSb.append(getOneRowString(colNameList, record, copyMode))
             selectedRowStrSb.append(lineWrapStr(copyMode, false))
         }
+        selectedRowStrSb.insert(0, allLineWrapStr(copyMode, true))
+        selectedRowStrSb.append(allLineWrapStr(copyMode, false))
         return selectedRowStrSb.toString()
     }
 
@@ -571,30 +563,85 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
 
     @Throws(URISyntaxException::class)
     private fun doAdd(rec: Map<String, AttributeValue>) {
-        val dialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.ADD)
-        dialog.initialize()
-        val newRecWk = dialog.showAndWait()
-        if (newRecWk.isPresent) {
-            val newRec = newRecWk.get()
-            val dao = PutItemDao(connInfo)
-            dao.putItem(tableInfo, newRec)
-            val viewRec = dynamoDbResult!!.addRecord(newRec)
-            tableResultList!!.items.add(viewRec)
+        val inputDialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.ADD)
+        inputDialog.initialize()
+        val newRecWk = inputDialog.showAndWait()
+        if (!newRecWk.isPresent) {
+            return
         }
+        val errInfo = DynamoDbErrorInfo()
+        val task: Task<Boolean> = object : Task<Boolean>() {
+            @Throws(Exception::class)
+            public override fun call(): Boolean {
+                try {
+                    val newRec = newRecWk.get()
+                    val dao = PutItemDao(connInfo)
+                    dao.putItem(tableInfo, newRec)
+                    val viewRec = dynamoDbResult!!.addRecord(newRec)
+                    tableResultList!!.items.add(viewRec)
+                } catch (e: Exception) {
+                    errInfo.message = e.message
+                    e.printStackTrace()
+                    throw e
+                }
+                return true
+            }
+        }
+        task.onRunning = EventHandler {
+            loadingDialog.show()
+        }
+        task.onSucceeded = EventHandler {
+            setTable(dynamoDbResult)
+            loadingDialog.hide()
+        }
+        task.onFailed = EventHandler {
+            val alert = Alert(AlertType.ERROR, errInfo.message)
+            alert.show()
+            loadingDialog.hide()
+        }
+        Thread(task).start()
     }
 
     @Throws(URISyntaxException::class)
     private fun doUpdate(dataIndex: Int, rec: Map<String, AttributeValue>) {
-        val dialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.UPD)
-        dialog.initialize()
-        val newRecWk = dialog.showAndWait()
-        if (newRecWk.isPresent) {
-            val newRec = newRecWk.get()
-            val dao = PutItemDao(connInfo)
-            dao.putItem(tableInfo, newRec)
-            val tableRec = dynamoDbResult!!.updateRecord(dataIndex, newRec)
-            tableResultList!!.items[dataIndex] = tableRec
+        val inputDialog = DynamoDbRecordInputDialog(tableInfo, rec, DynamoDbEditMode.UPD)
+        inputDialog.initialize()
+        val newRecWk = inputDialog.showAndWait()
+        if (!newRecWk.isPresent) {
+            return
         }
+
+        val errInfo = DynamoDbErrorInfo()
+        val task: Task<Boolean> = object : Task<Boolean>() {
+            @Throws(Exception::class)
+            public override fun call(): Boolean {
+                try {
+                    val newRec = newRecWk.get()
+                    val dao = UpdateItemDao(connInfo)
+                    dao.updateItem(tableInfo, newRec)
+                    val tableRec = dynamoDbResult!!.updateRecord(dataIndex, newRec)
+                    tableResultList!!.items[dataIndex] = tableRec
+                } catch (e: Exception) {
+                    errInfo.message = e.message
+                    e.printStackTrace()
+                    throw e
+                }
+                return true
+            }
+        }
+        task.onRunning = EventHandler {
+            loadingDialog.show()
+        }
+        task.onSucceeded = EventHandler {
+            setTable(dynamoDbResult)
+            loadingDialog.hide()
+        }
+        task.onFailed = EventHandler {
+            val alert = Alert(AlertType.ERROR, errInfo.message)
+            alert.show()
+            loadingDialog.hide()
+        }
+        Thread(task).start()
     }
 
     @Throws(URISyntaxException::class)
@@ -609,16 +656,42 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
         }
         val confirmDialog = Alert(AlertType.CONFIRMATION)
         confirmDialog.headerText = "Delete Information"
-        // confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.OK);
-        // confirmDialog.getDialogPane().getButtonTypes().add(ButtonType.CANCEL);
         confirmDialog.contentText = sb.toString()
         val retType = confirmDialog.showAndWait().get()
-        if (retType == ButtonType.OK) {
-            val dao = DeleteItemDao(connInfo)
-            dao.deleteItem(tableInfo, rec)
-            dynamoDbResult!!.removeRecord(dataIndex)
-            tableResultList!!.items.removeAt(dataIndex)
+        if (retType != ButtonType.OK) {
+            return
         }
+
+        val errInfo = DynamoDbErrorInfo()
+        val task: Task<Boolean> = object : Task<Boolean>() {
+            @Throws(Exception::class)
+            public override fun call(): Boolean {
+                try {
+                    val dao = DeleteItemDao(connInfo)
+                    dao.deleteItem(tableInfo, rec)
+                    dynamoDbResult!!.removeRecord(dataIndex)
+                    tableResultList!!.items.removeAt(dataIndex)
+                } catch (e: Exception) {
+                    errInfo.message = e.message
+                    e.printStackTrace()
+                    throw e
+                }
+                return true
+            }
+        }
+        task.onRunning = EventHandler {
+            loadingDialog.show()
+        }
+        task.onSucceeded = EventHandler {
+            setTable(dynamoDbResult)
+            loadingDialog.hide()
+        }
+        task.onFailed = EventHandler {
+            val alert = Alert(AlertType.ERROR, errInfo.message)
+            alert.show()
+            loadingDialog.hide()
+        }
+        Thread(task).start()
     }
 
     private fun getPositionList(
@@ -655,14 +728,14 @@ class DynamoDbTable(private val connInfo: DynamoDbConnectInfo, private val table
         for (gsiDesc in tableInfo.globalSecondaryIndexes()) {
             val indexName = gsiDesc.indexName()
             val gsiKeyInfo = gsiDesc.keySchema()
-            gsiInfoList += getIndexInfo(indexName, gsiKeyInfo)
+            gsiInfoList = gsiInfoList + getIndexInfo(indexName, gsiKeyInfo)
         }
 
         lsiInfoList = ArrayList()
         for (lsiDesc in tableInfo.localSecondaryIndexes()) {
             val indexName = lsiDesc.indexName()
             val gsiKeyInfo = lsiDesc.keySchema()
-            lsiInfoList += getIndexInfo(indexName, gsiKeyInfo)
+            lsiInfoList = lsiInfoList + getIndexInfo(indexName, gsiKeyInfo)
         }
     }
 

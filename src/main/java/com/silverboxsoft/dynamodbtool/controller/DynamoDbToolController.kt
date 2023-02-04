@@ -67,7 +67,7 @@ class DynamoDbToolController : Initializable {
     /*
 	 * event handler
 	 */
-    private var dialog: Alert = Alert(AlertType.INFORMATION)
+    private var loadingDialog: Alert = Alert(AlertType.INFORMATION)
     override fun initialize(location: URL, resources: ResourceBundle?) {
         initCmb()
         initLoadDialog()
@@ -92,10 +92,10 @@ class DynamoDbToolController : Initializable {
                 return true
             }
         }
-        task.onRunning = EventHandler { e: WorkerStateEvent? -> dialog!!.show() }
-        task.onSucceeded = EventHandler { e: WorkerStateEvent? -> dialog!!.hide() }
+        task.onRunning = EventHandler { e: WorkerStateEvent? -> loadingDialog!!.show() }
+        task.onSucceeded = EventHandler { e: WorkerStateEvent? -> loadingDialog!!.hide() }
         task.onFailed = EventHandler { e: WorkerStateEvent? ->
-            dialog!!.hide()
+            loadingDialog!!.hide()
             val alert = Alert(AlertType.ERROR, errInfo.message)
             alert.show()
         }
@@ -205,7 +205,7 @@ class DynamoDbToolController : Initializable {
     fun actTableDecided() {
         try {
             val tableName = lvTableList!!.selectionModel.selectedItem
-            val dbTable = DynamoDbTable(connectInfo, tableName, dialog)
+            val dbTable = DynamoDbTable(connectInfo, tableName, loadingDialog)
             dbTable.initialize()
             val newTab = Tab()
             newTab.text = tableName
@@ -224,9 +224,9 @@ class DynamoDbToolController : Initializable {
 	 * method
 	 */
     private fun initLoadDialog() {
-        dialog.headerText = null
-        dialog.contentText = "Now Loading..."
-        val pane: Pane = dialog.dialogPane
+        loadingDialog.headerText = null
+        loadingDialog.contentText = "Now Loading..."
+        val pane: Pane = loadingDialog.dialogPane
         val nodes = pane.children
         for (node in nodes) {
             (node as? ButtonBar)?.isVisible = false

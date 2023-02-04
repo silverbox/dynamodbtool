@@ -53,7 +53,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
     }
 
     private fun fillNewColumn() {
-        resItems.stream().forEach { rec: DynamoDbViewRecord -> rec.getData().add(DynamoDbUtils.Companion.NO_VALSTR) }
+        resItems.stream().forEach { rec: DynamoDbViewRecord -> rec.getData().add(DynamoDbUtils.Companion.STR_NO_VAL) }
     }
 
     val columnCount: Int
@@ -94,6 +94,7 @@ class DynamoDbResult(items: List<Map<String, AttributeValue>>, tableInfo: TableD
 
     fun removeRecord(rowIndex: Int) {
         rawResItems.removeAt(rowIndex)
+        resItems.removeAt(rowIndex)
     }
 
     fun getColumnIndexByName(colName: String): Int {

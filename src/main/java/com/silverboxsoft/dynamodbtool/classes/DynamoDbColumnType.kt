@@ -31,9 +31,21 @@ enum class DynamoDbColumnType(//
                 BOOLEAN -> AttributeValue.builder().bool(true).build()
                 BINARY -> AttributeValue.builder().b(SdkBytes.fromByteArray(ByteArray(0))).build()
                 NULL -> AttributeValue.builder().nul(true).build()
-                STRING_SET -> AttributeValue.builder().ss().build()
-                NUMBER_SET -> AttributeValue.builder().ns().build()
-                BINARY_SET -> AttributeValue.builder().bs().build()
+                STRING_SET -> {
+                    val initSs = ArrayList<String?>()
+                    initSs.add("")
+                    AttributeValue.builder().ss(initSs).build()
+                }
+                NUMBER_SET -> {
+                    val initNs = ArrayList<String?>()
+                    initNs.add("0")
+                    AttributeValue.builder().ns(initNs).build()
+                }
+                BINARY_SET -> {
+                    val initBs = ArrayList<SdkBytes?>()
+                    initBs.add(SdkBytes.fromByteArray(ByteArray(0)))
+                    AttributeValue.builder().bs(initBs).build()
+                }
                 LIST -> AttributeValue.builder().l(ArrayList()).build()
                 MAP -> AttributeValue.builder().m(HashMap()).build()
                 else -> AttributeValue.builder().s("").build()
